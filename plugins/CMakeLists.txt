@@ -23,6 +23,10 @@ if(NOT WIN32)
     add_subdirectory(screensaver-inhibit)
     add_subdirectory(sftp)
 endif()
+
+add_subdirectory(castdisplay)
+add_subdirectory(castremote)
+
 if(EXPERIMENTALAPP_ENABLED)
     add_subdirectory(remotecommands)
     add_subdirectory(mprisremote)

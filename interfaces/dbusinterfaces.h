@@ -36,6 +36,7 @@
 #include "interfaces/remotecommandsinterface.h"
 #include "interfaces/remotekeyboardinterface.h"
 #include "interfaces/telephonyinterface.h"
+#include "interfaces/castdisplayinterface.h"
 
 /**
  * Using these "proxy" classes just in case we need to rename the
@@ -208,6 +209,19 @@ class KDECONNECTINTERFACES_EXPORT TelephonyDbusInterface
 public:
     explicit TelephonyDbusInterface(const QString& deviceId, QObject* parent = nullptr);
     ~TelephonyDbusInterface() override;
+};
+
+class KDECONNECTINTERFACES_EXPORT CastDisplayDbusInterface
+    : public OrgKdeKdeconnectCastdisplayInterface
+{
+    Q_OBJECT
+public:
+    explicit CastDisplayDbusInterface(QObject* parent = nullptr);
+    virtual ~CastDisplayDbusInterface();
+
+Q_SIGNALS:
+    void startProgram(const QString& programPath, const QJsonObject& data);
+
 };
 
 template <typename T, typename W>

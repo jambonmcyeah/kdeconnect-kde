@@ -90,6 +90,7 @@ void KdeConnectDeclarativePlugin::registerTypes(const char* uri)
     qmlRegisterType<NotificationsModel>(uri, 1, 0, "NotificationsModel");
     qmlRegisterType<DBusAsyncResponse>(uri, 1, 0, "DBusAsyncResponse");
     qmlRegisterType<DevicesSortProxyModel>(uri, 1, 0, "DevicesSortProxyModel");
+    qmlRegisterType<CastDisplayDbusInterface>(uri, 1, 0, "CastDisplayDbusInterface");
     qmlRegisterUncreatableType<MprisDbusInterface>(uri, 1, 0, "MprisDbusInterface", QStringLiteral("You're not supposed to instantiate interfacess"));
     qmlRegisterUncreatableType<LockDeviceDbusInterface>(uri, 1, 0, "LockDeviceDbusInterface", QStringLiteral("You're not supposed to instantiate interfacess"));
     qmlRegisterUncreatableType<FindMyPhoneDeviceDbusInterface>(uri, 1, 0, "FindMyPhoneDbusInterface", QStringLiteral("You're not supposed to instantiate interfacess"));
