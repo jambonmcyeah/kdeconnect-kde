@@ -52,11 +52,11 @@ ContactsPlugin::~ContactsPlugin()
 
 bool ContactsPlugin::receivePackage(const NetworkPackage& np)
 {
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Package Received for device " << device()->name();
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << np.body();
+
     if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE)
     {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Package Received for device " << device()->name();
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << np.body();
-
         int index = 0;
 
         cacheLock.lock();
@@ -85,6 +85,9 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
 
         // Now that we have processed an incoming packet, there (should be) contacts available
         Q_EMIT cachedContactsAvailable();
+    } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
+    {
+        this->handleResponseUIDs(np);
     }
     else
     {
@@ -102,6 +105,56 @@ void ContactsPlugin::sendAllContactsRequest()
     NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_ALL);
     bool success = sendPackage(np);
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendAllContactsRequest:" << success;
+}
+
+bool ContactsPlugin::sendRequest(QString packageType)
+{
+    NetworkPackage np(packageType);
+    bool success = sendPackage(np);
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendRequest: Sending " << packageType << success;
+
+    return success;
+}
+
+UIDCache_t ContactsPlugin::getCachedUIDs()
+{
+    UIDCache_t toReturn;
+
+    // I assume the remote device has at least one contact, so if there is nothing in the cache
+    // it needs to be populated
+    bool cachePopulated = uIDCache.size() > 0;
+
+    if (!cachePopulated)
+    {
+        this->sendRequest(PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS);
+
+        // Wait to receive result from phone or timeout
+        QTimer timer;
+        timer.setSingleShot(true);
+        timer.setInterval(CONTACTS_TIMEOUT_MS);
+        QEventLoop waitForReplyLoop;
+        // Allow timeout
+        connect(&timer, SIGNAL(timeout()), &waitForReplyLoop, SLOT(quit()));
+        // Also allow a reply
+        connect(this, SIGNAL(cachedUIDsAvailable()), &waitForReplyLoop, SLOT(quit()));
+
+        // Wait
+        waitForReplyLoop.exec();
+
+        if (!(timer.isActive()))
+        {
+            // The device did not reply before we timed out
+            // Note that it still might reply eventually, and receivePackage(..) will import the
+            // contacts to our local cache at that point
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS)<< "getCachedContacts:" << "Timeout waiting for device reply";
+        }
+    }
+
+    uIDCacheLock.lock();
+    toReturn = uIDCache;
+    uIDCacheLock.unlock();
+
+    return toReturn;
 }
 
 QPair<ContactsCache, ContactsCache> ContactsPlugin::getCachedContacts()
@@ -149,6 +202,28 @@ QPair<ContactsCache, ContactsCache> ContactsPlugin::getCachedContacts()
     return toReturn;
 }
 
+bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
+{
+
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDs:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    uIDCacheLock.lock();
+    for (const QString& uID : uIDs)
+    {
+        uIDCache.insert(uID.toLong());
+    }
+    uIDCacheLock.unlock();
+
+    Q_EMIT cachedUIDsAvailable();
+    return true;
+}
+
 QStringList ContactsPlugin::getAllContacts()
 {
     QPair<ContactsCache, ContactsCache> contactsCaches = this->getCachedContacts();
@@ -165,6 +240,21 @@ QStringList ContactsPlugin::getAllContacts()
     }
 
     toReturn.append(QString::number(contactsCaches.first.size()));
+
+    return toReturn;
+}
+
+QStringList ContactsPlugin::getAllContactUIDs()
+{
+    QSet<long> uIDs = this->getCachedUIDs();
+    QStringList toReturn;
+
+    for (long uID : uIDs)
+    {
+        toReturn.append(QString::number(uID));
+    }
+
+    toReturn.append(QString::number(uIDCache.size()));
 
     return toReturn;
 }

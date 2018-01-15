@@ -30,13 +30,30 @@
 
 /**
  * Request the device send us the entire contacts book
+ *
+ * This package type is soon to be depreciated and deleted
  */
 #define PACKAGE_TYPE_CONTACTS_REQUEST_ALL QStringLiteral("kdeconnect.contacts.request_all")
 
 /**
+ * Used to request the device send the unique ID of every contact
+ */
+#define PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
+
+/**
  * Response from the device containing a list of zero or more pairings of names and phone numbers
+ *
+ * This package type is soon to be depreciated and deleted
  */
 #define PACKAGE_TYPE_CONTACTS_RESPONSE QStringLiteral("kdeconnect.contacts.response")
+
+/**
+ * Response indicating the package contains a list of contact uIDs
+ *
+ * It shall contain the key "uids", which will mark a list of uIDs (long int)
+ * The returned IDs can be used in future requests for more information about the contact
+ */
+#define PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS QStringLiteral("kdeconnect.contacts.response_uids")
 
 /**
  * Amount of time we are willing to wait before deciding the device is not going to reply
@@ -61,6 +78,8 @@ typedef QPair<QString, QPair<QString, QString>> ContactsEntry;
  * A contacts database pairs either names or numbers to a list of corresponding contacts
  */
 typedef QHash<QString, QSet<ContactsEntry>> ContactsCache;
+
+typedef QSet<long> UIDCache_t;
 
 class Q_DECL_EXPORT ContactsPlugin
     : public KdeConnectPlugin
@@ -87,7 +106,12 @@ public Q_SLOTS:
      */
     Q_SCRIPTABLE QStringList getAllContacts();
 
-    // TODO: Combine sendAllContactsRequest and getCachedContacts so that only one DBus call needs to be made
+    /**
+     * Enumerate a uID for every contact on the phone
+     *
+     * These uIDs can be used in future dbus calls to get more information about the contact
+     */
+    Q_SCRIPTABLE QStringList getAllContactUIDs();
 
 protected:
     /**
@@ -101,9 +125,24 @@ protected:
     ContactsCache cachedContactsByNumber;
 
     /**
+     * Store list of locally-known contacts' uIDs
+     */
+    UIDCache_t uIDCache;
+
+    /**
      * Enforce mutual exclusion when accessing the cached contacts
      */
     QMutex cacheLock;
+
+    /**
+     * Enforce mutual exclusion when accessing the cached uIDs
+     */
+    QMutex uIDCacheLock;
+
+    /**
+     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
+     */
+    bool handleResponseUIDs(const NetworkPackage&);
 
     /**
      * Get the locally-known collection of contacts
@@ -115,16 +154,37 @@ protected:
     QPair<ContactsCache, ContactsCache> getCachedContacts();
 
     /**
+     * Get the locally-known collection of uIDs
+     *
+     * If the cache has not yet been populated, populate it first
+     *
+     * @return Locally-cached contacts' uIDs
+     */
+    UIDCache_t getCachedUIDs();
+
+    /**
      * Query the remote device for its contacts book, bypassing and populating the local cache
      */
     void sendAllContactsRequest();
 
+    /**
+     * Send a request-type packet, which contains no body
+     *
+     * @return True if the send was successful, false otherwise
+     */
+    bool sendRequest(QString packageType);
 
-protected: Q_SIGNALS:
+
+public: Q_SIGNALS:
     /**
      * Emitted to indicate that we have received some contacts from the device
      */
     Q_SCRIPTABLE void cachedContactsAvailable();
+
+    /**
+     * Emitted to indicate we have received some contacts' uIDs from the device
+     */
+    Q_SCRIPTABLE void cachedUIDsAvailable();
 };
 
 #endif // CONTACTSPLUGIN_H

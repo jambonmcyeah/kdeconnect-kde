@@ -23,10 +23,11 @@
         "Website": "http://albertvaka.wordpress.com"
     },
     "X-KdeConnect-OutgoingPackageType": [
-        "kdeconnect.contacts.request_all"
+        "kdeconnect.contacts.request_all",
+        "kdeconnect.contacts.request_all_uids"
     ],
     "X-KdeConnect-SupportedPackageType": [
-        "kdeconnect.contacts.request_all",
-        "kdeconnect.contacts.response"
+        "kdeconnect.contacts.response",
+        "kdeconnect.contacts.response_uids"
     ]
 }
