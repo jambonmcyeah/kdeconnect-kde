@@ -27,6 +27,7 @@
 #include <QMutex>
 
 #include <core/kdeconnectplugin.h>
+#include "phoneentry.h"
 
 /**
  * Request the device send us the entire contacts book
@@ -46,6 +47,20 @@
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
 #define PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_names_by_uid")
+
+/**
+ * Used to request the phone numbers for the contacts corresponding to a list of UIDs
+ *
+ * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
+ */
+#define PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_phones_by_uid")
+
+/**
+ * Used to request the email addresses for the contacts corresponding to a list of UIDs
+ *
+ * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
+ */
+#define PACKAGE_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_emails_by_uid")
 
 /**
  * Response from the device containing a list of zero or more pairings of names and phone numbers
@@ -77,6 +92,25 @@
 #define PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES QStringLiteral("kdeconnect.contacts.response_names")
 
 /**
+ * Response indicating the package contains a list of contact numbers
+ *
+ * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
+ * then, for each UID, there shall be a 3-field list containing the phone number, the type, and the label
+ *
+ * For now, the values in types are undefined, but coincidentally match the list here:
+ * https://developer.android.com/reference/android/provider/ContactsContract.CommonDataKinds.Phone.html
+ *
+ * The label field is defined to be the custom label if the number is a custom type, otherwise the empty string
+ *
+ * For example:
+ * ( 'uids' : ['1', '3', '15'],
+ *  '1'  : [ [ '+221234',  '2', '' ] ]
+ *  '3'  : [ [ '+1(222)333-4444', '0', 'Big Red Button' ] ] // This number has a custom type
+ *  '15' : [ [ '6061234', '1', '' ] ] )
+ */
+#define PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES QStringLiteral("kdeconnect.contacts.response_phones")
+
+/**
  * Amount of time we are willing to wait before deciding the device is not going to reply
  *
  * This is a random number picked by me, and might need to be adjusted based on real-world testing
@@ -106,10 +140,17 @@ Q_DECLARE_METATYPE(uID_t)
 typedef QList<uID_t> uIDList_t;
 Q_DECLARE_METATYPE(uIDList_t)
 
+typedef QSet<uID_t> UIDCache_t;
+Q_DECLARE_METATYPE(UIDCache_t)
+
 typedef QHash<uID_t, QString> NameCache_t;
 Q_DECLARE_METATYPE(NameCache_t)
 
-typedef QSet<uID_t> UIDCache_t;
+typedef QList<PhoneEntry> PhoneEntryList_t;
+Q_DECLARE_METATYPE(PhoneEntryList_t)
+
+typedef QHash<uID_t, PhoneEntryList_t> PhoneCache_t;
+Q_DECLARE_METATYPE(PhoneCache_t)
 
 class Q_DECL_EXPORT ContactsPlugin
     : public KdeConnectPlugin
@@ -148,6 +189,11 @@ public Q_SLOTS:
      */
     Q_SCRIPTABLE NameCache_t getNamesByUIDs(uIDList_t);
 
+    /**
+     * Reply with pairs of values, connecting uIDs to PhoneEntries
+     */
+    Q_SCRIPTABLE PhoneCache_t getPhonesByUIDs(uIDList_t);
+
 protected:
     /**
      * Store locally-known list of contacts keyed by name, e.g. <Mom, <Work, +12025550101>>
@@ -170,6 +216,11 @@ protected:
     NameCache_t namesCache;
 
     /**
+     * Store the mapping of locally-known uIDs mapping to names
+     */
+    PhoneCache_t phonesCache;
+
+    /**
      * Enforce mutual exclusion when accessing the cached contacts
      */
     QMutex cacheLock;
@@ -185,6 +236,11 @@ protected:
     QMutex namesCacheLock;
 
     /**
+     * Enforce mutual exclusion when accessing the cached phone numbers
+     */
+    QMutex phonesCacheLock;
+
+    /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
      */
     bool handleResponseUIDs(const NetworkPackage&);
@@ -193,6 +249,11 @@ protected:
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES
      */
     bool handleResponseNames(const NetworkPackage&);
+
+    /**
+     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
+     */
+    bool handleResponsePhones(const NetworkPackage&);
 
     /**
      * Get the locally-known collection of contacts
@@ -223,6 +284,16 @@ protected:
     NameCache_t getCachedNamesForIDs(uIDList_t uIDs);
 
     /**
+     * Get the locally-known collection of uID -> PhoneEntry mapping
+     *
+     * If the cache has not yet been populated, populate it first
+     *
+     * @param uIDs List of IDs for which to fetch mappings
+     * @return Locally-cached contacts' uID -> PhoneEntry mapping
+     */
+    PhoneCache_t getCachedPhonesForIDs(uIDList_t uIDs);
+
+    /**
      * Query the remote device for its contacts book, bypassing and populating the local cache
      */
     void sendAllContactsRequest();
@@ -242,6 +313,13 @@ protected:
      */
     bool sendNamesForIDsRequest(uIDList_t uIDs);
 
+    /**
+     * Send a PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS-type packet with the list of UIDs to request
+     *
+     * @param uIDs List of uIDs to request
+     * @return True if the send was successful, false otherwise
+     */
+    bool sendPhonesForIDsRequest(uIDList_t uIDs);
 
 public: Q_SIGNALS:
     /**
@@ -258,6 +336,11 @@ public: Q_SIGNALS:
      * Emitted to indicate we have received some names from the device
      */
     Q_SCRIPTABLE void cachedNamesAvailable();
+
+    /**
+     * Emitted to indicate we have received some names from the device
+     */
+    Q_SCRIPTABLE void cachedPhonesAvailable();
 };
 
 #endif // CONTACTSPLUGIN_H

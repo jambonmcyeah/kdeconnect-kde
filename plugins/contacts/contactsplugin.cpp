@@ -19,6 +19,7 @@
  */
 
 #include <contactsplugin.h>
+#include "phoneentry.h"
 
 #include <KLocalizedString>
 #include <KPluginFactory>
@@ -41,14 +42,23 @@ ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
     // Initialize the dbus interface
-    qRegisterMetaType<NameCache_t>("NameCache");
-    qDBusRegisterMetaType<NameCache_t>();
-
     qRegisterMetaType<uID_t>("uID");
     qDBusRegisterMetaType<uID_t>();
 
     qRegisterMetaType<uIDList_t>("uIDList");
     qDBusRegisterMetaType<uIDList_t>();
+
+    qRegisterMetaType<NameCache_t>("NameCache");
+    qDBusRegisterMetaType<NameCache_t>();
+
+    PhoneEntry::registerMetaType();
+
+    qRegisterMetaType<PhoneEntryList_t>("PhoneEntryList");
+    qDBusRegisterMetaType<PhoneEntryList_t>();
+
+    qRegisterMetaType<PhoneCache_t>("PhoneCache");
+    qDBusRegisterMetaType<PhoneCache_t>();
+
     // TODO: Error checking like https://doc.qt.io/qt-5/qtdbus-pingpong-pong-cpp.html
     QDBusConnection::sessionBus().registerService(this->dbusPath());
     QDBusConnection::sessionBus().registerObject(this->dbusPath(), this, QDBusConnection::ExportAllSlots);
@@ -95,12 +105,16 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
 
         // Now that we have processed an incoming packet, there (should be) contacts available
         Q_EMIT cachedContactsAvailable();
+        return true;
     } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
     {
-        this->handleResponseUIDs(np);
+        return this->handleResponseUIDs(np);
     } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES)
     {
-        this->handleResponseNames(np);
+        return this->handleResponseNames(np);
+    }  else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES)
+    {
+        return this->handleResponsePhones(np);
     } else
     {
         // Is this check necessary?
@@ -108,8 +122,6 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
                 << device()->name() << ". Maybe you need to upgrade KDE Connect?";
         return false;
     }
-
-    return true;
 }
 
 void ContactsPlugin::sendAllContactsRequest()
@@ -131,6 +143,21 @@ bool ContactsPlugin::sendRequest(QString packageType)
 bool ContactsPlugin::sendNamesForIDsRequest(uIDList_t uIDs)
 {
     NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS);
+
+    // Convert IDs to strings
+    QStringList uIDsAsStrings;
+    for (auto uID : uIDs)
+    {
+        uIDsAsStrings.append(QString::number(uID));
+    }
+    np.set<QStringList>("uids", uIDsAsStrings);
+    bool success = sendPackage(np);
+    return success;
+}
+
+bool ContactsPlugin::sendPhonesForIDsRequest(uIDList_t uIDs)
+{
+    NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS);
 
     // Convert IDs to strings
     QStringList uIDsAsStrings;
@@ -222,6 +249,50 @@ NameCache_t ContactsPlugin::getCachedNamesForIDs(QList<uID_t> uIDs)
         if (namesCache.contains(id))
         {
             toReturn.insert(id, namesCache[id]);
+        }
+    }
+
+    return toReturn;
+}
+
+PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
+{
+    PhoneCache_t toReturn;
+
+    // Figure out the list of IDs for which we don't have phone numbers
+    QList<uID_t> uncachedIDs;
+    for (auto id : uIDs)
+    {
+        if (!phonesCache.contains(id))
+        {
+            uncachedIDs.append(id);
+        }
+    }
+
+    if (uncachedIDs.length() > 0) // If there are uncached IDs
+    {
+        this->sendPhonesForIDsRequest(uncachedIDs);
+
+        // Wait to receive result from phone or timeout
+        QTimer timer;
+        timer.setSingleShot(true);
+        timer.setInterval(CONTACTS_TIMEOUT_MS);
+        QEventLoop waitForReplyLoop;
+        // Allow timeout
+        connect(&timer, SIGNAL(timeout()), &waitForReplyLoop, SLOT(quit()));
+        // Also allow a reply
+        connect(this, SIGNAL(cachedPhonesAvailable()), &waitForReplyLoop, SLOT(quit()));
+
+        // Wait
+        waitForReplyLoop.exec();
+    }
+
+    for (auto id : uIDs)
+    {
+        // Still need to check, since we may have an invalid ID
+        if (phonesCache.contains(id))
+        {
+            toReturn.insert(id, phonesCache[id]);
         }
     }
 
@@ -323,6 +394,55 @@ bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
     return true;
 }
 
+bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    phonesCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        // Get the list of all phone numbers for this contact
+        auto EntriesList = np.get<QVariantList>(uID);
+
+        // For each list, extract a single NumberEntry
+        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
+        for (QVariant entryVariant : EntriesList)
+        {
+            QStringList entryStr = entryVariant.value<QStringList>();
+            if (entryStr.size() < 3)
+            {
+                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have enough entries for a PhoneEntry for UID " << uID;
+                // If the packet is malformed, better to continue than crash...
+                continue;
+            }
+            QString number = entryStr[0];
+            int type = entryStr[1].toInt();
+            QString label = entryStr[2];
+            PhoneEntry entry(number, type, label);
+
+            phonesCache[uID.toLongLong()].append(entry);
+        }
+    }
+    phonesCacheLock.unlock();
+
+
+    Q_EMIT cachedPhonesAvailable();
+    return true;
+}
+
 QStringList ContactsPlugin::getAllContacts()
 {
     QPair<ContactsCache, ContactsCache> contactsCaches = this->getCachedContacts();
@@ -356,9 +476,14 @@ uIDList_t ContactsPlugin::getAllContactUIDs()
     return toReturn;
 }
 
-NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t IDs)
+NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t uIDs)
 {
-    return this->getCachedNamesForIDs(IDs);
+    return this->getCachedNamesForIDs(uIDs);
+}
+
+PhoneCache_t ContactsPlugin::getPhonesByUIDs(uIDList_t uIDs)
+{
+    return this->getCachedPhonesForIDs(uIDs);
 }
 
 QString ContactsPlugin::dbusPath() const
