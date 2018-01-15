@@ -39,9 +39,10 @@ Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_CONTACTS, "kdeconnect.plugin.contacts")
 ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
+    // Initialize the dbus interface
     // TODO: Error checking like https://doc.qt.io/qt-5/qtdbus-pingpong-pong-cpp.html
     QDBusConnection::sessionBus().registerService(this->dbusPath());
-    QDBusConnection::sessionBus().registerObject("/", this, QDBusConnection::ExportAllSlots);
+    QDBusConnection::sessionBus().registerObject(this->dbusPath(), this, QDBusConnection::ExportAllSlots);
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts constructor for device " << device()->name();
 }
 
