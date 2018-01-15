@@ -75,38 +75,7 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Package Received for device " << device()->name();
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << np.body();
 
-    if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE)
-    {
-        int index = 0;
-
-        cacheLock.lock();
-        while(true)
-        {
-            auto contact = np.get<QStringList>(QString::number(index));
-            if (contact.length() == 0)
-            {
-                // If nothing was returned, assume we have processed all contacts
-                break;
-            }
-            QString contactName = contact[0];
-            QString contactNumber = contact[2];
-            QString contactNumberCategory = contact[1];
-
-            ContactsEntry newContact =
-                    ContactsEntry(contactName,
-                                  QPair<QString, QString>(contactNumberCategory, contactNumber));
-
-            cachedContactsByName[contactName].insert(newContact);
-            cachedContactsByNumber[contactNumber].insert(newContact);
-
-            index ++;
-        }
-        cacheLock.unlock();
-
-        // Now that we have processed an incoming packet, there (should be) contacts available
-        Q_EMIT cachedContactsAvailable();
-        return true;
-    } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
+    if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
     {
         return this->handleResponseUIDs(np);
     } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES)
@@ -122,13 +91,6 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
                 << device()->name() << ". Maybe you need to upgrade KDE Connect?";
         return false;
     }
-}
-
-void ContactsPlugin::sendAllContactsRequest()
-{
-    NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_ALL);
-    bool success = sendPackage(np);
-    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendAllContactsRequest:" << success;
 }
 
 bool ContactsPlugin::sendRequest(QString packageType)
@@ -299,51 +261,6 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
     return toReturn;
 }
 
-QPair<ContactsCache, ContactsCache> ContactsPlugin::getCachedContacts()
-{
-    // I assume the remote device has at least one contact, so if there is nothing in the cache
-    // it needs to be populated
-    bool cachePopulated = cachedContactsByName.size() > 0;
-
-    QPair<ContactsCache, ContactsCache> toReturn;
-
-    if (cachePopulated)
-    {
-        // Do nothing. Fall through to return code.
-    }
-    else
-    {
-        // Otherwise we need to request the contacts book from the remote device
-        this->sendAllContactsRequest();
-
-        // Wait to receive result from phone or timeout
-        QTimer timer;
-        timer.setSingleShot(true);
-        timer.setInterval(CONTACTS_TIMEOUT_MS);
-        QEventLoop waitForReplyLoop;
-        // Allow timeout
-        connect(&timer, SIGNAL(timeout()), &waitForReplyLoop, SLOT(quit()));
-        // Also allow a reply
-        connect(this, SIGNAL(cachedContactsAvailable()), &waitForReplyLoop, SLOT(quit()));
-
-        // Wait
-        waitForReplyLoop.exec();
-
-        if (!(timer.isActive()))
-        {
-            // The device did not reply before we timed out
-            // Note that it still might reply eventually, and receivePackage(..) will import the
-            // contacts to our local cache at that point
-            qCDebug(KDECONNECT_PLUGIN_CONTACTS)<< "getCachedContacts:" << "Timeout waiting for device reply";
-        }
-    }
-
-    cacheLock.lock();
-    toReturn = QPair<ContactsCache, ContactsCache>(cachedContactsByName, cachedContactsByNumber);
-    cacheLock.unlock();
-    return toReturn;
-}
-
 bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
 {
     if (!np.has("uids"))
@@ -441,26 +358,6 @@ bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
 
     Q_EMIT cachedPhonesAvailable();
     return true;
-}
-
-QStringList ContactsPlugin::getAllContacts()
-{
-    QPair<ContactsCache, ContactsCache> contactsCaches = this->getCachedContacts();
-
-    // Test code: Iterate through the list of contacts and reply to the DBus request with their names
-    QStringList toReturn;
-    for ( auto contactSet : contactsCaches.first)
-    {
-        for (ContactsEntry contact : contactSet)
-        {
-            toReturn.append(contact.first); // Name
-            toReturn.append(contact.second.second); // Number
-        }
-    }
-
-    toReturn.append(QString::number(contactsCaches.first.size()));
-
-    return toReturn;
 }
 
 uIDList_t ContactsPlugin::getAllContactUIDs()

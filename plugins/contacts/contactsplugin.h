@@ -30,13 +30,6 @@
 #include "phoneentry.h"
 
 /**
- * Request the device send us the entire contacts book
- *
- * This package type is soon to be depreciated and deleted
- */
-#define PACKAGE_TYPE_CONTACTS_REQUEST_ALL QStringLiteral("kdeconnect.contacts.request_all")
-
-/**
  * Used to request the device send the unique ID of every contact
  */
 #define PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
@@ -61,13 +54,6 @@
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
 #define PACKAGE_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_emails_by_uid")
-
-/**
- * Response from the device containing a list of zero or more pairings of names and phone numbers
- *
- * This package type is soon to be depreciated and deleted
- */
-#define PACKAGE_TYPE_CONTACTS_RESPONSE QStringLiteral("kdeconnect.contacts.response")
 
 /**
  * Response indicating the package contains a list of contact uIDs
@@ -170,14 +156,6 @@ public:
 public Q_SLOTS:
 
     /**
-     * Get all the contacts known from the phone
-     *
-     * @return Map of names to pairs of phone number categories and phone numbers
-     * e.g. <Mom, <Work, +12025550101>>
-     */
-    Q_SCRIPTABLE QStringList getAllContacts();
-
-    /**
      * Enumerate a uID for every contact on the phone
      *
      * These uIDs can be used in future dbus calls to get more information about the contact
@@ -195,15 +173,6 @@ public Q_SLOTS:
     Q_SCRIPTABLE PhoneCache_t getPhonesByUIDs(uIDList_t);
 
 protected:
-    /**
-     * Store locally-known list of contacts keyed by name, e.g. <Mom, <Work, +12025550101>>
-     */
-    ContactsCache cachedContactsByName;
-
-    /**
-     * Store locally-known list of contacts keyed by number, e.g. <+12025550101, <Mom, Work>>
-     */
-    ContactsCache cachedContactsByNumber;
 
     /**
      * Store list of locally-known contacts' uIDs
@@ -219,11 +188,6 @@ protected:
      * Store the mapping of locally-known uIDs mapping to names
      */
     PhoneCache_t phonesCache;
-
-    /**
-     * Enforce mutual exclusion when accessing the cached contacts
-     */
-    QMutex cacheLock;
 
     /**
      * Enforce mutual exclusion when accessing the cached uIDs
@@ -256,15 +220,6 @@ protected:
     bool handleResponsePhones(const NetworkPackage&);
 
     /**
-     * Get the locally-known collection of contacts
-     *
-     * If the cache has not yet been populated, populate it first
-     *
-     * @return Locally-cached contacts buffers
-     */
-    QPair<ContactsCache, ContactsCache> getCachedContacts();
-
-    /**
      * Get the locally-known collection of uIDs
      *
      * If the cache has not yet been populated, populate it first
@@ -294,11 +249,6 @@ protected:
     PhoneCache_t getCachedPhonesForIDs(uIDList_t uIDs);
 
     /**
-     * Query the remote device for its contacts book, bypassing and populating the local cache
-     */
-    void sendAllContactsRequest();
-
-    /**
      * Send a request-type packet, which contains no body
      *
      * @return True if the send was successful, false otherwise
@@ -322,11 +272,6 @@ protected:
     bool sendPhonesForIDsRequest(uIDList_t uIDs);
 
 public: Q_SIGNALS:
-    /**
-     * Emitted to indicate that we have received some contacts from the device
-     */
-    Q_SCRIPTABLE void cachedContactsAvailable();
-
     /**
      * Emitted to indicate we have received some contacts' uIDs from the device
      */
