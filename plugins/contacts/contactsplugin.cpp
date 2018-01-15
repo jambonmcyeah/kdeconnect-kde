@@ -245,17 +245,15 @@ QStringList ContactsPlugin::getAllContacts()
     return toReturn;
 }
 
-QStringList ContactsPlugin::getAllContactUIDs()
+QList<int> ContactsPlugin::getAllContactUIDs()
 {
-    QSet<long> uIDs = this->getCachedUIDs();
-    QStringList toReturn;
+    UIDCache_t uIDs = this->getCachedUIDs();
+    QList<int> toReturn;
 
-    for (long uID : uIDs)
+    for (uID_t uID : uIDs)
     {
-        toReturn.append(QString::number(uID));
+        toReturn.push_back(uID);
     }
-
-    toReturn.append(QString::number(uIDCache.size()));
 
     return toReturn;
 }

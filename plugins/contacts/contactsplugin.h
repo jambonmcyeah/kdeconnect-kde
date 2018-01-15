@@ -79,7 +79,9 @@ typedef QPair<QString, QPair<QString, QString>> ContactsEntry;
  */
 typedef QHash<QString, QSet<ContactsEntry>> ContactsCache;
 
-typedef QSet<long> UIDCache_t;
+typedef qint64 uID_t;
+
+typedef QSet<uID_t> UIDCache_t;
 
 class Q_DECL_EXPORT ContactsPlugin
     : public KdeConnectPlugin
@@ -111,7 +113,8 @@ public Q_SLOTS:
      *
      * These uIDs can be used in future dbus calls to get more information about the contact
      */
-    Q_SCRIPTABLE QStringList getAllContactUIDs();
+    Q_SCRIPTABLE QList<int> getAllContactUIDs();
+    //TODO: getAllContactUIDs should return QList<uID_t>, but I can't get dbus to do that (nor plain qint64)
 
 protected:
     /**
