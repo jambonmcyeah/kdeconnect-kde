@@ -41,6 +41,13 @@
 #define PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
 
 /**
+ * Used to request the names for a the contacts corresponding to a list of UIDs
+ *
+ * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
+ */
+#define PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_names_by_uid")
+
+/**
  * Response from the device containing a list of zero or more pairings of names and phone numbers
  *
  * This package type is soon to be depreciated and deleted
@@ -50,10 +57,24 @@
 /**
  * Response indicating the package contains a list of contact uIDs
  *
- * It shall contain the key "uids", which will mark a list of uIDs (long int)
+ * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
  * The returned IDs can be used in future requests for more information about the contact
  */
 #define PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS QStringLiteral("kdeconnect.contacts.response_uids")
+
+/**
+ * Response indicating the package contains a list of contact names
+ *
+ * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
+ * then, for each UID, there shall be a field with the key of that UID and the value of the name of the contact
+ *
+ * For example:
+ * ( 'uids' : ['1', '3', '15'],
+ *  '1'  : 'John Smith',
+ *  '3'  : 'Abe Lincoln',
+ *  '15' : 'Mom' )
+ */
+#define PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES QStringLiteral("kdeconnect.contacts.response_names")
 
 /**
  * Amount of time we are willing to wait before deciding the device is not going to reply
@@ -79,7 +100,14 @@ typedef QPair<QString, QPair<QString, QString>> ContactsEntry;
  */
 typedef QHash<QString, QSet<ContactsEntry>> ContactsCache;
 
-typedef qint64 uID_t;
+typedef long long uID_t;
+Q_DECLARE_METATYPE(uID_t)
+
+typedef QList<uID_t> uIDList_t;
+Q_DECLARE_METATYPE(uIDList_t)
+
+typedef QHash<uID_t, QString> NameCache_t;
+Q_DECLARE_METATYPE(NameCache_t)
 
 typedef QSet<uID_t> UIDCache_t;
 
@@ -113,8 +141,12 @@ public Q_SLOTS:
      *
      * These uIDs can be used in future dbus calls to get more information about the contact
      */
-    Q_SCRIPTABLE QList<int> getAllContactUIDs();
-    //TODO: getAllContactUIDs should return QList<uID_t>, but I can't get dbus to do that (nor plain qint64)
+    Q_SCRIPTABLE uIDList_t getAllContactUIDs();
+
+    /**
+     * Reply with pairs of values, connecting uIDs to names
+     */
+    Q_SCRIPTABLE NameCache_t getNamesByUIDs(uIDList_t);
 
 protected:
     /**
@@ -133,6 +165,11 @@ protected:
     UIDCache_t uIDCache;
 
     /**
+     * Store the mapping of locally-known uIDs mapping to names
+     */
+    NameCache_t namesCache;
+
+    /**
      * Enforce mutual exclusion when accessing the cached contacts
      */
     QMutex cacheLock;
@@ -143,9 +180,19 @@ protected:
     QMutex uIDCacheLock;
 
     /**
+     * Enforce mutual exclusion when accessing the cached names
+     */
+    QMutex namesCacheLock;
+
+    /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
      */
     bool handleResponseUIDs(const NetworkPackage&);
+
+    /**
+     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES
+     */
+    bool handleResponseNames(const NetworkPackage&);
 
     /**
      * Get the locally-known collection of contacts
@@ -166,6 +213,16 @@ protected:
     UIDCache_t getCachedUIDs();
 
     /**
+     * Get the locally-known collection of uID -> name mapping
+     *
+     * If the cache has not yet been populated, populate it first
+     *
+     * @param uIDs List of IDs for which to fetch mappings
+     * @return Locally-cached contacts' uID -> name mapping
+     */
+    NameCache_t getCachedNamesForIDs(uIDList_t uIDs);
+
+    /**
      * Query the remote device for its contacts book, bypassing and populating the local cache
      */
     void sendAllContactsRequest();
@@ -176,6 +233,14 @@ protected:
      * @return True if the send was successful, false otherwise
      */
     bool sendRequest(QString packageType);
+
+    /**
+     * Send a PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS-type packet with the list of UIDs to request
+     *
+     * @param uIDs List of uIDs to request
+     * @return True if the send was successful, false otherwise
+     */
+    bool sendNamesForIDsRequest(uIDList_t uIDs);
 
 
 public: Q_SIGNALS:
@@ -188,6 +253,11 @@ public: Q_SIGNALS:
      * Emitted to indicate we have received some contacts' uIDs from the device
      */
     Q_SCRIPTABLE void cachedUIDsAvailable();
+
+    /**
+     * Emitted to indicate we have received some names from the device
+     */
+    Q_SCRIPTABLE void cachedNamesAvailable();
 };
 
 #endif // CONTACTSPLUGIN_H

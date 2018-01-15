@@ -24,10 +24,12 @@
     },
     "X-KdeConnect-OutgoingPackageType": [
         "kdeconnect.contacts.request_all",
-        "kdeconnect.contacts.request_all_uids"
+        "kdeconnect.contacts.request_all_uids",
+        "kdeconnect.contacts.request_names_by_uid"
     ],
     "X-KdeConnect-SupportedPackageType": [
         "kdeconnect.contacts.response",
-        "kdeconnect.contacts.response_uids"
+        "kdeconnect.contacts.response_uids",
+        "kdeconnect.contacts.response_names"
     ]
 }

@@ -25,6 +25,7 @@
 
 #include <QDebug>
 #include <QDBusConnection>
+#include <QtDBus>
 #include <QEventLoop>
 #include <QLoggingCategory>
 #include <QMutex>
@@ -40,6 +41,14 @@ ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
     // Initialize the dbus interface
+    qRegisterMetaType<NameCache_t>("NameCache");
+    qDBusRegisterMetaType<NameCache_t>();
+
+    qRegisterMetaType<uID_t>("uID");
+    qDBusRegisterMetaType<uID_t>();
+
+    qRegisterMetaType<uIDList_t>("uIDList");
+    qDBusRegisterMetaType<uIDList_t>();
     // TODO: Error checking like https://doc.qt.io/qt-5/qtdbus-pingpong-pong-cpp.html
     QDBusConnection::sessionBus().registerService(this->dbusPath());
     QDBusConnection::sessionBus().registerObject(this->dbusPath(), this, QDBusConnection::ExportAllSlots);
@@ -89,8 +98,10 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
     } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
     {
         this->handleResponseUIDs(np);
-    }
-    else
+    } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES)
+    {
+        this->handleResponseNames(np);
+    } else
     {
         // Is this check necessary?
         qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Unknown package type received from device: "
@@ -114,6 +125,21 @@ bool ContactsPlugin::sendRequest(QString packageType)
     bool success = sendPackage(np);
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendRequest: Sending " << packageType << success;
 
+    return success;
+}
+
+bool ContactsPlugin::sendNamesForIDsRequest(uIDList_t uIDs)
+{
+    NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS);
+
+    // Convert IDs to strings
+    QStringList uIDsAsStrings;
+    for (auto uID : uIDs)
+    {
+        uIDsAsStrings.append(QString::number(uID));
+    }
+    np.set<QStringList>("uids", uIDsAsStrings);
+    bool success = sendPackage(np);
     return success;
 }
 
@@ -147,13 +173,57 @@ UIDCache_t ContactsPlugin::getCachedUIDs()
             // The device did not reply before we timed out
             // Note that it still might reply eventually, and receivePackage(..) will import the
             // contacts to our local cache at that point
-            qCDebug(KDECONNECT_PLUGIN_CONTACTS)<< "getCachedContacts:" << "Timeout waiting for device reply";
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS)<< "getCachedUIDs:" << "Timeout waiting for device reply";
         }
     }
 
     uIDCacheLock.lock();
     toReturn = uIDCache;
     uIDCacheLock.unlock();
+
+    return toReturn;
+}
+
+NameCache_t ContactsPlugin::getCachedNamesForIDs(QList<uID_t> uIDs)
+{
+    NameCache_t toReturn;
+
+    // Figure out the list of IDs for which we don't have names
+    QList<uID_t> uncachedIDs;
+    for (auto id : uIDs)
+    {
+        if (!namesCache.contains(id))
+        {
+            uncachedIDs.append(id);
+        }
+    }
+
+    if (uncachedIDs.length() > 0) // If there are uncached IDs
+    {
+        this->sendNamesForIDsRequest(uncachedIDs);
+
+        // Wait to receive result from phone or timeout
+        QTimer timer;
+        timer.setSingleShot(true);
+        timer.setInterval(CONTACTS_TIMEOUT_MS);
+        QEventLoop waitForReplyLoop;
+        // Allow timeout
+        connect(&timer, SIGNAL(timeout()), &waitForReplyLoop, SLOT(quit()));
+        // Also allow a reply
+        connect(this, SIGNAL(cachedNamesAvailable()), &waitForReplyLoop, SLOT(quit()));
+
+        // Wait
+        waitForReplyLoop.exec();
+    }
+
+    for (auto id : uIDs)
+    {
+        // Still need to check, since we may have an invalid ID
+        if (namesCache.contains(id))
+        {
+            toReturn.insert(id, namesCache[id]);
+        }
+    }
 
     return toReturn;
 }
@@ -205,7 +275,6 @@ QPair<ContactsCache, ContactsCache> ContactsPlugin::getCachedContacts()
 
 bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
 {
-
     if (!np.has("uids"))
     {
         qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDs:" << "Malformed packet does not have uids key";
@@ -222,6 +291,35 @@ bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
     uIDCacheLock.unlock();
 
     Q_EMIT cachedUIDsAvailable();
+    return true;
+}
+
+bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    namesCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        namesCache.insert(uID.toLongLong(), np.get<QString>(uID));
+    }
+    namesCacheLock.unlock();
+
+
+    Q_EMIT cachedNamesAvailable();
     return true;
 }
 
@@ -245,10 +343,10 @@ QStringList ContactsPlugin::getAllContacts()
     return toReturn;
 }
 
-QList<int> ContactsPlugin::getAllContactUIDs()
+uIDList_t ContactsPlugin::getAllContactUIDs()
 {
     UIDCache_t uIDs = this->getCachedUIDs();
-    QList<int> toReturn;
+    uIDList_t toReturn;
 
     for (uID_t uID : uIDs)
     {
@@ -256,6 +354,11 @@ QList<int> ContactsPlugin::getAllContactUIDs()
     }
 
     return toReturn;
+}
+
+NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t IDs)
+{
+    return this->getCachedNamesForIDs(IDs);
 }
 
 QString ContactsPlugin::dbusPath() const
