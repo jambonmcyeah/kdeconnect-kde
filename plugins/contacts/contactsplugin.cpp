@@ -208,6 +208,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
 
     // Figure out the list of IDs for which we don't have phone numbers
     QList<uID_t> uncachedIDs;
+    phonesCacheLock.lock();
     for (auto id : uIDs)
     {
         if (!phonesCache.contains(id))
@@ -215,6 +216,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
             uncachedIDs.append(id);
         }
     }
+    phonesCacheLock.unlock();
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
@@ -234,6 +236,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
         waitForReplyLoop.exec();
     }
 
+    phonesCacheLock.lock();
     for (auto id : uIDs)
     {
         // Still need to check, since we may have an invalid ID
@@ -242,6 +245,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
             toReturn.insert(id, phonesCache[id]);
         }
     }
+    phonesCacheLock.unlock();
 
     return toReturn;
 }
