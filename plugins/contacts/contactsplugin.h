@@ -203,6 +203,27 @@ public Q_SLOTS:
      */
     Q_SCRIPTABLE PhoneCache_t getEmailsByUIDs(uIDList_t);
 
+public: Q_SIGNALS:
+    /**
+     * Emitted to indicate we have received some contacts' uIDs from the device
+     */
+    Q_SCRIPTABLE void cachedUIDsAvailable();
+
+    /**
+     * Emitted to indicate we have received some names from the device
+     */
+    Q_SCRIPTABLE void cachedNamesAvailable();
+
+    /**
+     * Emitted to indicate we have received some phone numbers from the device
+     */
+    Q_SCRIPTABLE void cachedPhonesAvailable();
+
+    /**
+     * Emitted to indicate we have received some email addresses from the device
+     */
+    Q_SCRIPTABLE void cachedEmailsAvailable();
+
 protected:
 
     /**
@@ -320,27 +341,6 @@ protected:
      * @return True if the send was successful, false otherwise
      */
     bool sendRequestWithIDs(QString packageType, uIDList_t uIDs);
-
-public: Q_SIGNALS:
-    /**
-     * Emitted to indicate we have received some contacts' uIDs from the device
-     */
-    Q_SCRIPTABLE void cachedUIDsAvailable();
-
-    /**
-     * Emitted to indicate we have received some names from the device
-     */
-    Q_SCRIPTABLE void cachedNamesAvailable();
-
-    /**
-     * Emitted to indicate we have received some phone numbers from the device
-     */
-    Q_SCRIPTABLE void cachedPhonesAvailable();
-
-    /**
-     * Emitted to indicate we have received some email addresses from the device
-     */
-    Q_SCRIPTABLE void cachedEmailsAvailable();
 };
 
 #endif // CONTACTSPLUGIN_H

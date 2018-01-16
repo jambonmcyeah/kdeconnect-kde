@@ -94,28 +94,179 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
     }
 }
 
-bool ContactsPlugin::sendRequest(QString packageType)
+uIDList_t ContactsPlugin::getAllContactUIDs()
 {
-    NetworkPackage np(packageType);
-    bool success = sendPackage(np);
-    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendRequest: Sending " << packageType << success;
+    UIDCache_t uIDs = this->getCachedUIDs();
+    uIDList_t toReturn;
 
-    return success;
+    for (uID_t uID : uIDs)
+    {
+        toReturn.push_back(uID);
+    }
+
+    return toReturn;
 }
 
-bool ContactsPlugin::sendRequestWithIDs(QString packageType, uIDList_t uIDs)
+NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t uIDs)
 {
-    NetworkPackage np(packageType);
+    return this->getCachedNamesForIDs(uIDs);
+}
 
-    // Convert IDs to strings
-    QStringList uIDsAsStrings;
-    for (auto uID : uIDs)
+PhoneCache_t ContactsPlugin::getPhonesByUIDs(uIDList_t uIDs)
+{
+    return this->getCachedPhonesForIDs(uIDs);
+}
+
+PhoneCache_t ContactsPlugin::getEmailsByUIDs(uIDList_t uIDs)
+{
+    return this->getCachedEmailsForIDs(uIDs);
+}
+
+bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
     {
-        uIDsAsStrings.append(QString::number(uID));
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDs:" << "Malformed packet does not have uids key";
+        return false;
     }
-    np.set<QStringList>("uids", uIDsAsStrings);
-    bool success = sendPackage(np);
-    return success;
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    uIDCacheLock.lock();
+    for (const QString& uID : uIDs)
+    {
+        uIDCache.insert(uID.toLong());
+    }
+    uIDCacheLock.unlock();
+
+    Q_EMIT cachedUIDsAvailable();
+    return true;
+}
+
+bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    namesCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        namesCache.insert(uID.toLongLong(), np.get<QString>(uID));
+    }
+    namesCacheLock.unlock();
+
+
+    Q_EMIT cachedNamesAvailable();
+    return true;
+}
+
+bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    phonesCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        // Get the list of all phone numbers for this contact
+        auto EntriesList = np.get<QVariantList>(uID);
+
+        // For each list, extract a single NumberEntry
+        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
+        for (QVariant entryVariant : EntriesList)
+        {
+            QStringList entryStr = entryVariant.value<QStringList>();
+            if (entryStr.size() < 3)
+            {
+                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have enough entries for a PhoneEntry for UID " << uID;
+                // If the packet is malformed, better to continue than crash...
+                continue;
+            }
+            QString number = entryStr[0];
+            int type = entryStr[1].toInt();
+            QString label = entryStr[2];
+            PhoneEntry entry(number, type, label);
+
+            phonesCache[uID.toLongLong()].append(entry);
+        }
+    }
+    phonesCacheLock.unlock();
+
+
+    Q_EMIT cachedPhonesAvailable();
+    return true;
+}
+
+bool ContactsPlugin::handleResponseEmails(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    emailsCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        // Get the list of all email addresses for this contact
+        auto EntriesList = np.get<QVariantList>(uID);
+
+        // For each list, extract a single EmailEntry
+        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
+        for (QVariant entryVariant : EntriesList)
+        {
+            QStringList entryStr = entryVariant.value<QStringList>();
+            if (entryStr.size() < 3)
+            {
+                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have enough entries for a EmailEntry for UID " << uID;
+                // If the packet is malformed, better to continue than crash...
+                continue;
+            }
+            QString address = entryStr[0];
+            int type = entryStr[1].toInt();
+            QString label = entryStr[2];
+            EmailEntry entry(address, type, label);
+
+            emailsCache[uID.toLongLong()].append(entry);
+        }
+    }
+    emailsCacheLock.unlock();
+
+    Q_EMIT cachedEmailsAvailable();
+    return true;
 }
 
 UIDCache_t ContactsPlugin::getCachedUIDs()
@@ -299,179 +450,28 @@ EmailCache_t ContactsPlugin::getCachedEmailsForIDs(uIDList_t uIDs)
     return toReturn;
 }
 
-bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
+bool ContactsPlugin::sendRequest(QString packageType)
 {
-    if (!np.has("uids"))
-    {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDs:" << "Malformed packet does not have uids key";
-        return false;
-    }
+    NetworkPackage np(packageType);
+    bool success = sendPackage(np);
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendRequest: Sending " << packageType << success;
 
-    QStringList uIDs = np.get<QStringList>("uids");
-
-    uIDCacheLock.lock();
-    for (const QString& uID : uIDs)
-    {
-        uIDCache.insert(uID.toLong());
-    }
-    uIDCacheLock.unlock();
-
-    Q_EMIT cachedUIDsAvailable();
-    return true;
+    return success;
 }
 
-bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
+bool ContactsPlugin::sendRequestWithIDs(QString packageType, uIDList_t uIDs)
 {
-    if (!np.has("uids"))
+    NetworkPackage np(packageType);
+
+    // Convert IDs to strings
+    QStringList uIDsAsStrings;
+    for (auto uID : uIDs)
     {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have uids key";
-        return false;
+        uIDsAsStrings.append(QString::number(uID));
     }
-
-    QStringList uIDs = np.get<QStringList>("uids");
-
-    namesCacheLock.lock();
-    for (QString uID : uIDs)
-    {
-        if (!np.has(uID))
-        {
-            // The packet is malformed
-            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have key " << uID;
-            // Struggle on anyway. Maybe we have other useful data.
-            continue;
-        }
-        namesCache.insert(uID.toLongLong(), np.get<QString>(uID));
-    }
-    namesCacheLock.unlock();
-
-
-    Q_EMIT cachedNamesAvailable();
-    return true;
-}
-
-bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
-{
-    if (!np.has("uids"))
-    {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have uids key";
-        return false;
-    }
-
-    QStringList uIDs = np.get<QStringList>("uids");
-
-    phonesCacheLock.lock();
-    for (QString uID : uIDs)
-    {
-        if (!np.has(uID))
-        {
-            // The packet is malformed
-            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have key " << uID;
-            // Struggle on anyway. Maybe we have other useful data.
-            continue;
-        }
-        // Get the list of all phone numbers for this contact
-        auto EntriesList = np.get<QVariantList>(uID);
-
-        // For each list, extract a single NumberEntry
-        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
-        for (QVariant entryVariant : EntriesList)
-        {
-            QStringList entryStr = entryVariant.value<QStringList>();
-            if (entryStr.size() < 3)
-            {
-                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponsePhones:" << "Malformed packet does not have enough entries for a PhoneEntry for UID " << uID;
-                // If the packet is malformed, better to continue than crash...
-                continue;
-            }
-            QString number = entryStr[0];
-            int type = entryStr[1].toInt();
-            QString label = entryStr[2];
-            PhoneEntry entry(number, type, label);
-
-            phonesCache[uID.toLongLong()].append(entry);
-        }
-    }
-    phonesCacheLock.unlock();
-
-
-    Q_EMIT cachedPhonesAvailable();
-    return true;
-}
-
-bool ContactsPlugin::handleResponseEmails(const NetworkPackage& np)
-{
-    if (!np.has("uids"))
-    {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have uids key";
-        return false;
-    }
-
-    QStringList uIDs = np.get<QStringList>("uids");
-
-    emailsCacheLock.lock();
-    for (QString uID : uIDs)
-    {
-        if (!np.has(uID))
-        {
-            // The packet is malformed
-            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have key " << uID;
-            // Struggle on anyway. Maybe we have other useful data.
-            continue;
-        }
-        // Get the list of all email addresses for this contact
-        auto EntriesList = np.get<QVariantList>(uID);
-
-        // For each list, extract a single EmailEntry
-        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
-        for (QVariant entryVariant : EntriesList)
-        {
-            QStringList entryStr = entryVariant.value<QStringList>();
-            if (entryStr.size() < 3)
-            {
-                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have enough entries for a EmailEntry for UID " << uID;
-                // If the packet is malformed, better to continue than crash...
-                continue;
-            }
-            QString address = entryStr[0];
-            int type = entryStr[1].toInt();
-            QString label = entryStr[2];
-            EmailEntry entry(address, type, label);
-
-            emailsCache[uID.toLongLong()].append(entry);
-        }
-    }
-    emailsCacheLock.unlock();
-
-    Q_EMIT cachedEmailsAvailable();
-    return true;
-}
-
-uIDList_t ContactsPlugin::getAllContactUIDs()
-{
-    UIDCache_t uIDs = this->getCachedUIDs();
-    uIDList_t toReturn;
-
-    for (uID_t uID : uIDs)
-    {
-        toReturn.push_back(uID);
-    }
-
-    return toReturn;
-}
-
-NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t uIDs)
-{
-    return this->getCachedNamesForIDs(uIDs);
-}
-
-PhoneCache_t ContactsPlugin::getPhonesByUIDs(uIDList_t uIDs)
-{
-    return this->getCachedPhonesForIDs(uIDs);
-}
-
-PhoneCache_t ContactsPlugin::getEmailsByUIDs(uIDList_t uIDs)
-{
-    return this->getCachedEmailsForIDs(uIDs);
+    np.set<QStringList>("uids", uIDsAsStrings);
+    bool success = sendPackage(np);
+    return success;
 }
 
 QString ContactsPlugin::dbusPath() const
