@@ -31,6 +31,7 @@
     "X-KdeConnect-SupportedPackageType": [
         "kdeconnect.contacts.response_uids",
         "kdeconnect.contacts.response_names",
-        "kdeconnect.contacts.response_phones"
+        "kdeconnect.contacts.response_phones",
+        "kdeconnect.contacts.response_emails"
     ]
 }

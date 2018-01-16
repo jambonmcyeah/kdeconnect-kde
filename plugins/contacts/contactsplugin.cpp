@@ -82,6 +82,9 @@ bool ContactsPlugin::receivePackage(const NetworkPackage& np)
     }  else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES)
     {
         return this->handleResponsePhones(np);
+    }  else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_EMAILS)
+    {
+        return this->handleResponseEmails(np);
     } else
     {
         // Is this check necessary?
@@ -248,6 +251,54 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
     return toReturn;
 }
 
+EmailCache_t ContactsPlugin::getCachedEmailsForIDs(uIDList_t uIDs)
+{
+    EmailCache_t toReturn;
+
+    // Figure out the list of IDs for which we don't have phone numbers
+    QList<uID_t> uncachedIDs;
+    emailsCacheLock.lock();
+    for (auto id : uIDs)
+    {
+        if (!emailsCache.contains(id))
+        {
+            uncachedIDs.append(id);
+        }
+    }
+    emailsCacheLock.unlock();
+
+    if (uncachedIDs.length() > 0) // If there are uncached IDs
+    {
+        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS, uncachedIDs);
+
+        // Wait to receive result from phone or timeout
+        QTimer timer;
+        timer.setSingleShot(true);
+        timer.setInterval(CONTACTS_TIMEOUT_MS);
+        QEventLoop waitForReplyLoop;
+        // Allow timeout
+        connect(&timer, SIGNAL(timeout()), &waitForReplyLoop, SLOT(quit()));
+        // Also allow a reply
+        connect(this, SIGNAL(cachedEmailsAvailable()), &waitForReplyLoop, SLOT(quit()));
+
+        // Wait
+        waitForReplyLoop.exec();
+    }
+
+    emailsCacheLock.lock();
+    for (auto id : uIDs)
+    {
+        // Still need to check, since we may have an invalid ID
+        if (emailsCache.contains(id))
+        {
+            toReturn.insert(id, emailsCache[id]);
+        }
+    }
+    emailsCacheLock.unlock();
+
+    return toReturn;
+}
+
 bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
 {
     if (!np.has("uids"))
@@ -347,6 +398,54 @@ bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
     return true;
 }
 
+bool ContactsPlugin::handleResponseEmails(const NetworkPackage& np)
+{
+    if (!np.has("uids"))
+    {
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have uids key";
+        return false;
+    }
+
+    QStringList uIDs = np.get<QStringList>("uids");
+
+    emailsCacheLock.lock();
+    for (QString uID : uIDs)
+    {
+        if (!np.has(uID))
+        {
+            // The packet is malformed
+            qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have key " << uID;
+            // Struggle on anyway. Maybe we have other useful data.
+            continue;
+        }
+        // Get the list of all email addresses for this contact
+        auto EntriesList = np.get<QVariantList>(uID);
+
+        // For each list, extract a single EmailEntry
+        // This should be possible to do directly with QVarient and NumberEntry, but I can't get it to work
+        for (QVariant entryVariant : EntriesList)
+        {
+            QStringList entryStr = entryVariant.value<QStringList>();
+            if (entryStr.size() < 3)
+            {
+                qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseEmails:" << "Malformed packet does not have enough entries for a EmailEntry for UID " << uID;
+                // If the packet is malformed, better to continue than crash...
+                continue;
+            }
+            QString address = entryStr[0];
+            int type = entryStr[1].toInt();
+            QString label = entryStr[2];
+            EmailEntry entry(address, type, label);
+
+            emailsCache[uID.toLongLong()].append(entry);
+        }
+    }
+    emailsCacheLock.unlock();
+
+    Q_EMIT cachedEmailsAvailable();
+    return true;
+}
+
 uIDList_t ContactsPlugin::getAllContactUIDs()
 {
     UIDCache_t uIDs = this->getCachedUIDs();
@@ -368,6 +467,11 @@ NameCache_t ContactsPlugin::getNamesByUIDs(uIDList_t uIDs)
 PhoneCache_t ContactsPlugin::getPhonesByUIDs(uIDList_t uIDs)
 {
     return this->getCachedPhonesForIDs(uIDs);
+}
+
+PhoneCache_t ContactsPlugin::getEmailsByUIDs(uIDList_t uIDs)
+{
+    return this->getCachedEmailsForIDs(uIDs);
 }
 
 QString ContactsPlugin::dbusPath() const

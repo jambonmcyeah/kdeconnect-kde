@@ -97,6 +97,25 @@
 #define PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES QStringLiteral("kdeconnect.contacts.response_phones")
 
 /**
+ * Response indicating the package contains a list of contact email addresses
+ *
+ * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
+ * then, for each UID, there shall be a 3-field list containing the email address, the type, and the label
+ *
+ * For now, the values in types are undefined, but coincidentally match the list here:
+ * https://developer.android.com/reference/android/provider/ContactsContract.CommonDataKinds.Email.html
+ *
+ * The label field is defined to be the custom label if the number is a custom type, otherwise the empty string
+ *
+ * For example:
+ * ( 'uids' : ['1', '3', '15'],
+ *  '1'  : [ [ 'john@example.com',  '2', '' ] ]
+ *  '3'  : [ [ 'abel@example.com', '0', 'Priority' ] ] // This email address has a custom type
+ *  '15' : [ [ 'mom@example.com', '1', '' ] ] )
+ */
+#define PACKAGE_TYPE_CONTACTS_RESPONSE_EMAILS QStringLiteral("kdeconnect.contacts.response_emails")
+
+/**
  * Amount of time we are willing to wait before deciding the device is not going to reply
  *
  * This is a random number picked by me, and might need to be adjusted based on real-world testing
@@ -138,6 +157,13 @@ Q_DECLARE_METATYPE(PhoneEntryList_t)
 typedef QHash<uID_t, PhoneEntryList_t> PhoneCache_t;
 Q_DECLARE_METATYPE(PhoneCache_t)
 
+// Email and Phone entries turn out to want the same fields
+typedef PhoneEntry EmailEntry;
+
+typedef QList<EmailEntry> EmailEntryList_t;
+
+typedef QHash<uID_t, EmailEntryList_t> EmailCache_t;
+
 class Q_DECL_EXPORT ContactsPlugin
     : public KdeConnectPlugin
 {
@@ -172,6 +198,11 @@ public Q_SLOTS:
      */
     Q_SCRIPTABLE PhoneCache_t getPhonesByUIDs(uIDList_t);
 
+    /**
+     * Reply with pairs of values, connecting uIDs to EmailEntries
+     */
+    Q_SCRIPTABLE PhoneCache_t getEmailsByUIDs(uIDList_t);
+
 protected:
 
     /**
@@ -190,6 +221,11 @@ protected:
     PhoneCache_t phonesCache;
 
     /**
+     * Store the mapping of locally-known uIDs mapping to names
+     */
+    EmailCache_t emailsCache;
+
+    /**
      * Enforce mutual exclusion when accessing the cached uIDs
      */
     QMutex uIDCacheLock;
@@ -205,6 +241,11 @@ protected:
     QMutex phonesCacheLock;
 
     /**
+     * Enforce mutual exclusion when accessing the cached phone numbers
+     */
+    QMutex emailsCacheLock;
+
+    /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
      */
     bool handleResponseUIDs(const NetworkPackage&);
@@ -218,6 +259,11 @@ protected:
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
      */
     bool handleResponsePhones(const NetworkPackage&);
+
+    /**
+     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
+     */
+    bool handleResponseEmails(const NetworkPackage&);
 
     /**
      * Get the locally-known collection of uIDs
@@ -249,6 +295,16 @@ protected:
     PhoneCache_t getCachedPhonesForIDs(uIDList_t uIDs);
 
     /**
+     * Get the locally-known collection of uID -> EmailEntry mapping
+     *
+     * If the cache has not yet been populated, populate it first
+     *
+     * @param uIDs List of IDs for which to fetch mappings
+     * @return Locally-cached contacts' uID -> EmailEntry mapping
+     */
+    PhoneCache_t getCachedEmailsForIDs(uIDList_t uIDs);
+
+    /**
      * Send a request-type packet, which contains no body
      *
      * @return True if the send was successful, false otherwise
@@ -277,9 +333,14 @@ public: Q_SIGNALS:
     Q_SCRIPTABLE void cachedNamesAvailable();
 
     /**
-     * Emitted to indicate we have received some names from the device
+     * Emitted to indicate we have received some phone numbers from the device
      */
     Q_SCRIPTABLE void cachedPhonesAvailable();
+
+    /**
+     * Emitted to indicate we have received some email addresses from the device
+     */
+    Q_SCRIPTABLE void cachedEmailsAvailable();
 };
 
 #endif // CONTACTSPLUGIN_H
