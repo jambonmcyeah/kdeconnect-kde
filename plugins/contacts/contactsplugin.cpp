@@ -102,24 +102,9 @@ bool ContactsPlugin::sendRequest(QString packageType)
     return success;
 }
 
-bool ContactsPlugin::sendNamesForIDsRequest(uIDList_t uIDs)
+bool ContactsPlugin::sendRequestWithIDs(QString packageType, uIDList_t uIDs)
 {
-    NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS);
-
-    // Convert IDs to strings
-    QStringList uIDsAsStrings;
-    for (auto uID : uIDs)
-    {
-        uIDsAsStrings.append(QString::number(uID));
-    }
-    np.set<QStringList>("uids", uIDsAsStrings);
-    bool success = sendPackage(np);
-    return success;
-}
-
-bool ContactsPlugin::sendPhonesForIDsRequest(uIDList_t uIDs)
-{
-    NetworkPackage np(PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS);
+    NetworkPackage np(packageType);
 
     // Convert IDs to strings
     QStringList uIDsAsStrings;
@@ -189,7 +174,7 @@ NameCache_t ContactsPlugin::getCachedNamesForIDs(QList<uID_t> uIDs)
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
-        this->sendNamesForIDsRequest(uncachedIDs);
+        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS, uncachedIDs);
 
         // Wait to receive result from phone or timeout
         QTimer timer;
@@ -233,7 +218,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
-        this->sendPhonesForIDsRequest(uncachedIDs);
+        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS, uncachedIDs);
 
         // Wait to receive result from phone or timeout
         QTimer timer;

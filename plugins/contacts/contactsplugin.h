@@ -256,20 +256,14 @@ protected:
     bool sendRequest(QString packageType);
 
     /**
-     * Send a PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS-type packet with the list of UIDs to request
+     * Send a request-type packet which has a body with the key 'uids' and the value the list of
+     * specified uIDs
      *
+     * @param packageType Type of package to send
      * @param uIDs List of uIDs to request
      * @return True if the send was successful, false otherwise
      */
-    bool sendNamesForIDsRequest(uIDList_t uIDs);
-
-    /**
-     * Send a PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS-type packet with the list of UIDs to request
-     *
-     * @param uIDs List of uIDs to request
-     * @return True if the send was successful, false otherwise
-     */
-    bool sendPhonesForIDsRequest(uIDList_t uIDs);
+    bool sendRequestWithIDs(QString packageType, uIDList_t uIDs);
 
 public: Q_SIGNALS:
     /**
