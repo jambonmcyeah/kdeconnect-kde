@@ -59,14 +59,12 @@ ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
     qRegisterMetaType<PhoneCache_t>("PhoneCache");
     qDBusRegisterMetaType<PhoneCache_t>();
 
-    // TODO: Error checking like https://doc.qt.io/qt-5/qtdbus-pingpong-pong-cpp.html
-    QDBusConnection::sessionBus().registerService(this->dbusPath());
-    QDBusConnection::sessionBus().registerObject(this->dbusPath(), this, QDBusConnection::ExportAllSlots);
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts constructor for device " << device()->name();
 }
 
 ContactsPlugin::~ContactsPlugin()
 {
+    QDBusConnection::sessionBus().unregisterObject(dbusPath(), QDBusConnection::UnregisterTree);
 //     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts plugin destructor for device" << device()->name();
 }
 
