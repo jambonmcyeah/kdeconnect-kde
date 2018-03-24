@@ -32,28 +32,28 @@
 /**
  * Used to request the device send the unique ID of every contact
  */
-#define PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
+#define PACKET_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
 
 /**
  * Used to request the names for a the contacts corresponding to a list of UIDs
  *
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
-#define PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_names_by_uid")
+#define PACKET_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_names_by_uid")
 
 /**
  * Used to request the phone numbers for the contacts corresponding to a list of UIDs
  *
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
-#define PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_phones_by_uid")
+#define PACKET_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_phones_by_uid")
 
 /**
  * Used to request the email addresses for the contacts corresponding to a list of UIDs
  *
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
-#define PACKAGE_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_emails_by_uid")
+#define PACKET_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_emails_by_uid")
 
 /**
  * Response indicating the package contains a list of contact uIDs
@@ -61,7 +61,7 @@
  * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
  * The returned IDs can be used in future requests for more information about the contact
  */
-#define PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS QStringLiteral("kdeconnect.contacts.response_uids")
+#define PACKET_TYPE_CONTACTS_RESPONSE_UIDS QStringLiteral("kdeconnect.contacts.response_uids")
 
 /**
  * Response indicating the package contains a list of contact names
@@ -75,7 +75,7 @@
  *  '3'  : 'Abe Lincoln',
  *  '15' : 'Mom' )
  */
-#define PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES QStringLiteral("kdeconnect.contacts.response_names")
+#define PACKET_TYPE_CONTACTS_RESPONSE_NAMES QStringLiteral("kdeconnect.contacts.response_names")
 
 /**
  * Response indicating the package contains a list of contact numbers
@@ -94,7 +94,7 @@
  *  '3'  : [ [ '+1(222)333-4444', '0', 'Big Red Button' ] ] // This number has a custom type
  *  '15' : [ [ '6061234', '1', '' ] ] )
  */
-#define PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES QStringLiteral("kdeconnect.contacts.response_phones")
+#define PACKET_TYPE_CONTACTS_RESPONSE_PHONES QStringLiteral("kdeconnect.contacts.response_phones")
 
 /**
  * Response indicating the package contains a list of contact email addresses
@@ -113,7 +113,7 @@
  *  '3'  : [ [ 'abel@example.com', '0', 'Priority' ] ] // This email address has a custom type
  *  '15' : [ [ 'mom@example.com', '1', '' ] ] )
  */
-#define PACKAGE_TYPE_CONTACTS_RESPONSE_EMAILS QStringLiteral("kdeconnect.contacts.response_emails")
+#define PACKET_TYPE_CONTACTS_RESPONSE_EMAILS QStringLiteral("kdeconnect.contacts.response_emails")
 
 /**
  * Amount of time we are willing to wait before deciding the device is not going to reply
@@ -174,7 +174,7 @@ public:
     explicit ContactsPlugin(QObject *parent, const QVariantList &args);
     ~ContactsPlugin() override;
 
-    bool receivePackage(const NetworkPackage& np) override;
+    bool receivePacket(const NetworkPacket& np) override;
     void connected() override {}
 
     QString dbusPath() const override;
@@ -269,22 +269,22 @@ protected:
     /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
      */
-    bool handleResponseUIDs(const NetworkPackage&);
+    bool handleResponseUIDs(const NetworkPacket&);
 
     /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES
      */
-    bool handleResponseNames(const NetworkPackage&);
+    bool handleResponseNames(const NetworkPacket&);
 
     /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
      */
-    bool handleResponsePhones(const NetworkPackage&);
+    bool handleResponsePhones(const NetworkPacket&);
 
     /**
      *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
      */
-    bool handleResponseEmails(const NetworkPackage&);
+    bool handleResponseEmails(const NetworkPacket&);
 
     /**
      * Get the locally-known collection of uIDs

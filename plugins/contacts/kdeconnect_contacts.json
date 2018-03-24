@@ -22,13 +22,13 @@
         "Version": "0.1",
         "Website": "http://albertvaka.wordpress.com"
     },
-    "X-KdeConnect-OutgoingPackageType": [
+    "X-KdeConnect-OutgoingPacketType": [
         "kdeconnect.contacts.request_all_uids",
         "kdeconnect.contacts.request_names_by_uid",
         "kdeconnect.contacts.request_phones_by_uid",
         "kdeconnect.contacts.request_emails_by_uid"
     ],
-    "X-KdeConnect-SupportedPackageType": [
+    "X-KdeConnect-SupportedPacketType": [
         "kdeconnect.contacts.response_uids",
         "kdeconnect.contacts.response_names",
         "kdeconnect.contacts.response_phones",

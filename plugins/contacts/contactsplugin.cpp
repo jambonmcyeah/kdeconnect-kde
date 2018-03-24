@@ -68,21 +68,21 @@ ContactsPlugin::~ContactsPlugin()
 //     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts plugin destructor for device" << device()->name();
 }
 
-bool ContactsPlugin::receivePackage(const NetworkPackage& np)
+bool ContactsPlugin::receivePacket(const NetworkPacket& np)
 {
-    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Package Received for device " << device()->name();
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Packet Received for device " << device()->name();
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << np.body();
 
-    if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS)
+    if (np.type() == PACKET_TYPE_CONTACTS_RESPONSE_UIDS)
     {
         return this->handleResponseUIDs(np);
-    } else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES)
+    } else if (np.type() == PACKET_TYPE_CONTACTS_RESPONSE_NAMES)
     {
         return this->handleResponseNames(np);
-    }  else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES)
+    }  else if (np.type() == PACKET_TYPE_CONTACTS_RESPONSE_PHONES)
     {
         return this->handleResponsePhones(np);
-    }  else if (np.type() == PACKAGE_TYPE_CONTACTS_RESPONSE_EMAILS)
+    }  else if (np.type() == PACKET_TYPE_CONTACTS_RESPONSE_EMAILS)
     {
         return this->handleResponseEmails(np);
     } else
@@ -122,7 +122,7 @@ PhoneCache_t ContactsPlugin::getEmailsByUIDs(uIDList_t uIDs)
     return this->getCachedEmailsForIDs(uIDs);
 }
 
-bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
+bool ContactsPlugin::handleResponseUIDs(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
@@ -143,7 +143,7 @@ bool ContactsPlugin::handleResponseUIDs(const NetworkPackage& np)
     return true;
 }
 
-bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
+bool ContactsPlugin::handleResponseNames(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
@@ -172,7 +172,7 @@ bool ContactsPlugin::handleResponseNames(const NetworkPackage& np)
     return true;
 }
 
-bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
+bool ContactsPlugin::handleResponsePhones(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
@@ -221,7 +221,7 @@ bool ContactsPlugin::handleResponsePhones(const NetworkPackage& np)
     return true;
 }
 
-bool ContactsPlugin::handleResponseEmails(const NetworkPackage& np)
+bool ContactsPlugin::handleResponseEmails(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
@@ -279,7 +279,7 @@ UIDCache_t ContactsPlugin::getCachedUIDs()
 
     if (!cachePopulated)
     {
-        this->sendRequest(PACKAGE_TYPE_CONTACTS_REQUEST_ALL_UIDS);
+        this->sendRequest(PACKET_TYPE_CONTACTS_REQUEST_ALL_UIDS);
 
         // Wait to receive result from phone or timeout
         QTimer timer;
@@ -326,7 +326,7 @@ NameCache_t ContactsPlugin::getCachedNamesForIDs(QList<uID_t> uIDs)
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
-        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS, uncachedIDs);
+        this->sendRequestWithIDs(PACKET_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS, uncachedIDs);
 
         // Wait to receive result from phone or timeout
         QTimer timer;
@@ -372,7 +372,7 @@ PhoneCache_t ContactsPlugin::getCachedPhonesForIDs(uIDList_t uIDs)
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
-        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS, uncachedIDs);
+        this->sendRequestWithIDs(PACKET_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS, uncachedIDs);
 
         // Wait to receive result from phone or timeout
         QTimer timer;
@@ -420,7 +420,7 @@ EmailCache_t ContactsPlugin::getCachedEmailsForIDs(uIDList_t uIDs)
 
     if (uncachedIDs.length() > 0) // If there are uncached IDs
     {
-        this->sendRequestWithIDs(PACKAGE_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS, uncachedIDs);
+        this->sendRequestWithIDs(PACKET_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS, uncachedIDs);
 
         // Wait to receive result from phone or timeout
         QTimer timer;
@@ -452,8 +452,8 @@ EmailCache_t ContactsPlugin::getCachedEmailsForIDs(uIDList_t uIDs)
 
 bool ContactsPlugin::sendRequest(QString packageType)
 {
-    NetworkPackage np(packageType);
-    bool success = sendPackage(np);
+    NetworkPacket np(packageType);
+    bool success = sendPacket(np);
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "sendRequest: Sending " << packageType << success;
 
     return success;
@@ -461,7 +461,7 @@ bool ContactsPlugin::sendRequest(QString packageType)
 
 bool ContactsPlugin::sendRequestWithIDs(QString packageType, uIDList_t uIDs)
 {
-    NetworkPackage np(packageType);
+    NetworkPacket np(packageType);
 
     // Convert IDs to strings
     QStringList uIDsAsStrings;
@@ -470,7 +470,7 @@ bool ContactsPlugin::sendRequestWithIDs(QString packageType, uIDList_t uIDs)
         uIDsAsStrings.append(QString::number(uID));
     }
     np.set<QStringList>("uids", uIDsAsStrings);
-    bool success = sendPackage(np);
+    bool success = sendPacket(np);
     return success;
 }
 
