@@ -49,6 +49,8 @@ ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
         qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to create VCard directory";
     }
 
+    this->synchronizeRemoteWithLocal();
+
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts constructor for device " << device()->name();
 }
 
