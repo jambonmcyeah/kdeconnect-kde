@@ -121,7 +121,33 @@ bool ContactsPlugin::handleResponseUIDsTimestamps(const NetworkPacket& np)
         bool success = localVCards.removeOne(fileInfo); // TODO: Test
 
         // Check if the vcard needs to be updated
-        // TODO: Check for update
+        if (!vcardFile.open(QIODevice::ReadOnly))
+        {
+            qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDsTimestamps:" << "Unable to open" << filename << "to read even though it was reported to exist";
+            continue;
+        }
+
+        QTextStream fileReadStream(&vcardFile);
+        QString line;
+        while (!fileReadStream.atEnd())
+        {
+            fileReadStream >> line;
+            // TODO: Check that the saved ID is the same as the one we were expecting
+            if (!line.startsWith("X-KDECONNECT-TIMESTAMP:"))
+            {
+                continue;
+            }
+            QStringList parts = line.split(":");
+            QString timestamp = parts[1];
+
+            qint32 remoteTimestamp = np.get<qint32>(ID);
+            qint32 localTimestamp = timestamp.toInt();
+
+            if (!(localTimestamp == remoteTimestamp))
+            {
+                uIDsToUpdate.push_back(ID.toLongLong());
+            }
+        }
     }
 
     // Delete all locally-known files which were not reported by the remote device
