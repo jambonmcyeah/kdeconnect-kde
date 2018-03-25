@@ -22,6 +22,7 @@
 #define CONTACTSPLUGIN_H
 
 #include <QObject>
+#include <QStandardPaths>
 
 #include <core/kdeconnectplugin.h>
 
@@ -66,6 +67,15 @@
  *  '15' : 'BEGIN:VCARD\n....\nEND:VCARD' )
  */
 #define PACKET_TYPE_CONTACTS_RESPONSE_VCARDS QStringLiteral("kdeconnect.contacts.response_vcards")
+
+/**
+ * Where the synchronizer will write vcards and other metadata
+ * TODO: Per-device folders since each device *will* have different uIDs
+ */
+Q_GLOBAL_STATIC_WITH_ARGS(QString, vcardsLocation, (QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + ("/kpeoplevcard")))
+
+#define VCARD_EXTENSION QStringLiteral(".vcf")
+#define METADATA_EXTENSION QStringLiteral(".meta")
 
 typedef qint64 uID_t;
 

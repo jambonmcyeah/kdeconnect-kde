@@ -28,8 +28,9 @@
 #include <QtDBus>
 #include <QEventLoop>
 #include <QLoggingCategory>
-#include <QMutex>
-#include <QTimer>
+#include <QFile>
+#include <QDir>
+#include <QIODevice>
 
 #include <core/device.h>
 
@@ -104,11 +105,32 @@ bool ContactsPlugin::handleResponseVCards(const NetworkPacket& np)
         return false;
     }
 
+    // Create the storage directory if it doesn't exist
+    bool dirCreated = QDir().mkpath(*vcardsLocation);
+    if (!dirCreated)
+    {
+        qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to create VCard directory";
+        return false;
+    }
+    QDir vcardsDir(*vcardsLocation);
+
     QStringList uIDs = np.get<QStringList>("uids");
 
+    // Loop over all IDs, extract the VCard from the packet and write the file
     for (auto ID : uIDs)
     {
-        qWarning() << "Got VCard:" << np.get<QString>(ID);
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Got VCard:" << np.get<QString>(ID);
+        QString filename = vcardsDir.filePath(ID + VCARD_EXTENSION);
+        QFile vcardFile(filename);
+        bool vcardFileOpened = vcardFile.open(QIODevice::WriteOnly); // Want to smash anything that might have already been there
+        if (!vcardFileOpened)
+        {
+            qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to open" << filename;
+            continue;
+        }
+
+        QTextStream fileWriteStream(&vcardFile);
+        fileWriteStream << np.get<QString>(ID);
     }
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Got" << uIDs.size() << "VCards";
     return true;
