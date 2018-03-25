@@ -23,146 +23,51 @@
 
 #include <QObject>
 
-#include <QDBusArgument>
-#include <QMutex>
-
 #include <core/kdeconnectplugin.h>
-#include "phoneentry.h"
 
 /**
- * Used to request the device send the unique ID of every contact
+ * Used to request the device send the unique ID and last-changed timestamp of every contact
  */
-#define PACKET_TYPE_CONTACTS_REQUEST_ALL_UIDS QStringLiteral("kdeconnect.contacts.request_all_uids")
+#define PACKET_TYPE_CONTACTS_REQUEST_ALL_UIDS_TIMESTAMP QStringLiteral("kdeconnect.contacts.request_all_uids_timestamps")
 
 /**
- * Used to request the names for a the contacts corresponding to a list of UIDs
+ * Used to request the vcards for the contacts corresponding to a list of UIDs
  *
  * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
  */
-#define PACKET_TYPE_CONTACTS_REQUEST_NAMES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_names_by_uid")
+#define PACKET_TYPE_CONTACTS_REQUEST_VCARDS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_vcards_by_uid")
 
 /**
- * Used to request the phone numbers for the contacts corresponding to a list of UIDs
- *
- * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
- */
-#define PACKET_TYPE_CONTACTS_REQUEST_PHONES_BY_UIDS QStringLiteral("kdeconnect.contacts.request_phones_by_uid")
-
-/**
- * Used to request the email addresses for the contacts corresponding to a list of UIDs
- *
- * It shall contain the key "uids", which will have a list of uIDs (long int, as string)
- */
-#define PACKET_TYPE_CONTACTS_REQUEST_EMAILS_BY_UIDS QStringLiteral("kdeconnect.contacts.request_emails_by_uid")
-
-/**
- * Response indicating the package contains a list of contact uIDs
+ * Response indicating the package contains a list of all contact uIDs and last-changed timestamps
  *
  * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
+ * then, for each UID, there shall be a field with the key of that UID and the value of the timestamp (int, as string)
+ *
+ * For example:
+ * ( 'uids' : ['1', '3', '15'],
+ *  '1'  : '44321453',
+ *  '3'  : '00020001',
+ *  '15' : '788665453234' )
+ *
  * The returned IDs can be used in future requests for more information about the contact
  */
-#define PACKET_TYPE_CONTACTS_RESPONSE_UIDS QStringLiteral("kdeconnect.contacts.response_uids")
+#define PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS_TIMESTAMPS QStringLiteral("kdeconnect.contacts.response_uids_timestamps")
 
 /**
  * Response indicating the package contains a list of contact names
  *
  * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
- * then, for each UID, there shall be a field with the key of that UID and the value of the name of the contact
+ * then, for each UID, there shall be a field with the key of that UID and the value of the remote's vcard for that contact
  *
  * For example:
  * ( 'uids' : ['1', '3', '15'],
- *  '1'  : 'John Smith',
- *  '3'  : 'Abe Lincoln',
- *  '15' : 'Mom' )
+ *  '1'  : 'BEGIN:VCARD\n....\nEND:VCARD',
+ *  '3'  : 'BEGIN:VCARD\n....\nEND:VCARD',
+ *  '15' : 'BEGIN:VCARD\n....\nEND:VCARD' )
  */
-#define PACKET_TYPE_CONTACTS_RESPONSE_NAMES QStringLiteral("kdeconnect.contacts.response_names")
+#define PACKET_TYPE_CONTACTS_RESPONSE_VCARDS QStringLiteral("kdeconnect.contacts.response_vcards")
 
-/**
- * Response indicating the package contains a list of contact numbers
- *
- * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
- * then, for each UID, there shall be a 3-field list containing the phone number, the type, and the label
- *
- * For now, the values in types are undefined, but coincidentally match the list here:
- * https://developer.android.com/reference/android/provider/ContactsContract.CommonDataKinds.Phone.html
- *
- * The label field is defined to be the custom label if the number is a custom type, otherwise the empty string
- *
- * For example:
- * ( 'uids' : ['1', '3', '15'],
- *  '1'  : [ [ '+221234',  '2', '' ] ]
- *  '3'  : [ [ '+1(222)333-4444', '0', 'Big Red Button' ] ] // This number has a custom type
- *  '15' : [ [ '6061234', '1', '' ] ] )
- */
-#define PACKET_TYPE_CONTACTS_RESPONSE_PHONES QStringLiteral("kdeconnect.contacts.response_phones")
-
-/**
- * Response indicating the package contains a list of contact email addresses
- *
- * It shall contain the key "uids", which will mark a list of uIDs (long int, as string)
- * then, for each UID, there shall be a 3-field list containing the email address, the type, and the label
- *
- * For now, the values in types are undefined, but coincidentally match the list here:
- * https://developer.android.com/reference/android/provider/ContactsContract.CommonDataKinds.Email.html
- *
- * The label field is defined to be the custom label if the number is a custom type, otherwise the empty string
- *
- * For example:
- * ( 'uids' : ['1', '3', '15'],
- *  '1'  : [ [ 'john@example.com',  '2', '' ] ]
- *  '3'  : [ [ 'abel@example.com', '0', 'Priority' ] ] // This email address has a custom type
- *  '15' : [ [ 'mom@example.com', '1', '' ] ] )
- */
-#define PACKET_TYPE_CONTACTS_RESPONSE_EMAILS QStringLiteral("kdeconnect.contacts.response_emails")
-
-/**
- * Amount of time we are willing to wait before deciding the device is not going to reply
- *
- * This is a random number picked by me, and might need to be adjusted based on real-world testing
- */
-#define CONTACTS_TIMEOUT_MS 10000
-
-/**
- * Type definition for a single contact database entry
- *
- * A contact is identified by:
- * a name, paired to a phone number and a phone number category
- * or
- * a phone number, paired to a name and a phone number category
- */
-typedef QPair<QString, QPair<QString, QString>> ContactsEntry;
-
-/**
- * Type definition for a contacts database
- *
- * A contacts database pairs either names or numbers to a list of corresponding contacts
- */
-typedef QHash<QString, QSet<ContactsEntry>> ContactsCache;
-
-typedef long long uID_t;
-Q_DECLARE_METATYPE(uID_t)
-
-typedef QList<uID_t> uIDList_t;
-Q_DECLARE_METATYPE(uIDList_t)
-
-typedef QSet<uID_t> UIDCache_t;
-Q_DECLARE_METATYPE(UIDCache_t)
-
-typedef QHash<uID_t, QString> NameCache_t;
-Q_DECLARE_METATYPE(NameCache_t)
-
-typedef QList<PhoneEntry> PhoneEntryList_t;
-Q_DECLARE_METATYPE(PhoneEntryList_t)
-
-typedef QHash<uID_t, PhoneEntryList_t> PhoneCache_t;
-Q_DECLARE_METATYPE(PhoneCache_t)
-
-// Email and Phone entries turn out to want the same fields
-typedef PhoneEntry EmailEntry;
-
-typedef QList<EmailEntry> EmailEntryList_t;
-
-typedef QHash<uID_t, EmailEntryList_t> EmailCache_t;
+typedef qint64 uID_t;
 
 class Q_DECL_EXPORT ContactsPlugin
     : public KdeConnectPlugin
@@ -182,155 +87,35 @@ public:
 public Q_SLOTS:
 
     /**
-     * Enumerate a uID for every contact on the phone
-     *
-     * These uIDs can be used in future dbus calls to get more information about the contact
+     * 	Query the remote device for all its uIDs and last-changed timestamps, then:
+     * 		Delete any contacts which are known locally but not reported by the remote
+     * 		Update any contacts which are known locally but have an older timestamp
+     * 		Add any contacts which are not known locally but are reported by the remote
      */
-    Q_SCRIPTABLE uIDList_t getAllContactUIDs();
-
-    /**
-     * Reply with pairs of values, connecting uIDs to names
-     */
-    Q_SCRIPTABLE NameCache_t getNamesByUIDs(uIDList_t);
-
-    /**
-     * Reply with pairs of values, connecting uIDs to PhoneEntries
-     */
-    Q_SCRIPTABLE PhoneCache_t getPhonesByUIDs(uIDList_t);
-
-    /**
-     * Reply with pairs of values, connecting uIDs to EmailEntries
-     */
-    Q_SCRIPTABLE PhoneCache_t getEmailsByUIDs(uIDList_t);
+    Q_SCRIPTABLE void synchronizeRemoteWithLocal();
 
 public: Q_SIGNALS:
     /**
-     * Emitted to indicate we have received some contacts' uIDs from the device
+     * Emitted to indicate that we have locally cached all remote contacts
      */
-    Q_SCRIPTABLE void cachedUIDsAvailable();
-
-    /**
-     * Emitted to indicate we have received some names from the device
-     */
-    Q_SCRIPTABLE void cachedNamesAvailable();
-
-    /**
-     * Emitted to indicate we have received some phone numbers from the device
-     */
-    Q_SCRIPTABLE void cachedPhonesAvailable();
-
-    /**
-     * Emitted to indicate we have received some email addresses from the device
-     */
-    Q_SCRIPTABLE void cachedEmailsAvailable();
+    Q_SCRIPTABLE void localCacheSynchronized();
 
 protected:
 
     /**
-     * Store list of locally-known contacts' uIDs
-     */
-    UIDCache_t uIDCache;
-
-    /**
-     * Store the mapping of locally-known uIDs mapping to names
-     */
-    NameCache_t namesCache;
-
-    /**
-     * Store the mapping of locally-known uIDs mapping to names
-     */
-    PhoneCache_t phonesCache;
-
-    /**
-     * Store the mapping of locally-known uIDs mapping to names
-     */
-    EmailCache_t emailsCache;
-
-    /**
-     * Enforce mutual exclusion when accessing the cached uIDs
-     */
-    QMutex uIDCacheLock;
-
-    /**
-     * Enforce mutual exclusion when accessing the cached names
-     */
-    QMutex namesCacheLock;
-
-    /**
-     * Enforce mutual exclusion when accessing the cached phone numbers
-     */
-    QMutex phonesCacheLock;
-
-    /**
-     * Enforce mutual exclusion when accessing the cached phone numbers
-     */
-    QMutex emailsCacheLock;
-
-    /**
-     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS
-     */
-    bool handleResponseUIDs(const NetworkPacket&);
-
-    /**
-     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_NAMES
-     */
-    bool handleResponseNames(const NetworkPacket&);
-
-    /**
-     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
-     */
-    bool handleResponsePhones(const NetworkPacket&);
-
-    /**
-     *  Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_PHONES
-     */
-    bool handleResponseEmails(const NetworkPacket&);
-
-    /**
-     * Get the locally-known collection of uIDs
+     *	Handle a packet of type PACKAGE_TYPE_CONTACTS_RESPONSE_UIDS_TIMESTAMPS
      *
-     * If the cache has not yet been populated, populate it first
-     *
-     * @return Locally-cached contacts' uIDs
+     *  For every uID in the reply:
+     *  	Delete any from local storage if it does not appear in the reply
+     *  	Compare the modified timestamp for each in the reply and update any which should have changed
+     *  	Request the details any IDs which were not locally cached
      */
-    UIDCache_t getCachedUIDs();
+    bool handleResponseUIDsTimestamps(const NetworkPacket&);
 
     /**
-     * Get the locally-known collection of uID -> name mapping
-     *
-     * If the cache has not yet been populated, populate it first
-     *
-     * @param uIDs List of IDs for which to fetch mappings
-     * @return Locally-cached contacts' uID -> name mapping
+     *  Handle a packet of type PACKET_TYPE_CONTACTS_RESPONSE_VCARDS
      */
-    NameCache_t getCachedNamesForIDs(uIDList_t uIDs);
-
-    /**
-     * Get the locally-known collection of uID -> PhoneEntry mapping
-     *
-     * If the cache has not yet been populated, populate it first
-     *
-     * @param uIDs List of IDs for which to fetch mappings
-     * @return Locally-cached contacts' uID -> PhoneEntry mapping
-     */
-    PhoneCache_t getCachedPhonesForIDs(uIDList_t uIDs);
-
-    /**
-     * Get the locally-known collection of uID -> EmailEntry mapping
-     *
-     * If the cache has not yet been populated, populate it first
-     *
-     * @param uIDs List of IDs for which to fetch mappings
-     * @return Locally-cached contacts' uID -> EmailEntry mapping
-     */
-    PhoneCache_t getCachedEmailsForIDs(uIDList_t uIDs);
-
-    /**
-     * Send a request-type packet, which contains no body
-     *
-     * @return True if the send was successful, false otherwise
-     */
-    bool sendRequest(QString packageType);
+    bool handleResponseVCards(const NetworkPacket&);
 
     /**
      * Send a request-type packet which has a body with the key 'uids' and the value the list of

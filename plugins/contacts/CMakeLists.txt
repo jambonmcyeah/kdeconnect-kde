@@ -1,6 +1,5 @@
 set(kdeconnect_contacts_SRCS
     contactsplugin.cpp
-    phoneentry.cpp
 )
 
 kdeconnect_add_plugin(kdeconnect_contacts JSON kdeconnect_contacts.json SOURCES ${kdeconnect_contacts_SRCS})

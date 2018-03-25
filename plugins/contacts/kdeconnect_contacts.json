@@ -23,15 +23,11 @@
         "Website": "http://albertvaka.wordpress.com"
     },
     "X-KdeConnect-OutgoingPacketType": [
-        "kdeconnect.contacts.request_all_uids",
-        "kdeconnect.contacts.request_names_by_uid",
-        "kdeconnect.contacts.request_phones_by_uid",
-        "kdeconnect.contacts.request_emails_by_uid"
+        "kdeconnect.contacts.request_all_uids_timestamps",
+        "kdeconnect.contacts.request_vcards_by_uid"
     ],
     "X-KdeConnect-SupportedPacketType": [
         "kdeconnect.contacts.response_uids",
-        "kdeconnect.contacts.response_names",
-        "kdeconnect.contacts.response_phones",
-        "kdeconnect.contacts.response_emails"
+        "kdeconnect.contacts.response_vcards"
     ]
 }
