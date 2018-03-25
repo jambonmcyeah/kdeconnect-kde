@@ -91,13 +91,44 @@ bool ContactsPlugin::handleResponseUIDsTimestamps(const NetworkPacket& np)
         return false;
     }
     uIDList_t uIDsToUpdate;
+    QDir vcardsDir(vcardsPath);
+
+    // Get a list of all file info in this directory
+    // Clean out IDs returned from the remote. Anything leftover should be deleted
+    QFileInfoList localVCards = vcardsDir.entryInfoList({"*.vcard", "*.vcf"});
 
     QStringList uIDs = np.get<QStringList>("uids");
 
-    // TODO: Check local storage... As soon as local storage is implemented. For now, just send everything
+
+    // Check local storage for the contacts:
+    //  If the contact is not found in local storage, request its vcard be sent
+    //  If the contact is in local storage but not reported, delete it
+    //  If the contact is in local storage, compare its timestamp. If different, request the contact
     for (QString ID : uIDs)
     {
-        uIDsToUpdate.push_back(ID.toLongLong());
+        QString filename = vcardsDir.filePath(ID + VCARD_EXTENSION);
+        QFile vcardFile(filename);
+
+        if (!QFile().exists(filename))
+        {
+            // We do not have a vcard for this contact. Request it.
+            uIDsToUpdate.push_back(ID.toLongLong());
+            continue;
+        }
+
+        // Remove this file from the list of known files
+        QFileInfo fileInfo(vcardFile);
+        bool success = localVCards.removeOne(fileInfo); // TODO: Test
+
+        // Check if the vcard needs to be updated
+        // TODO: Check for update
+    }
+
+    // Delete all locally-known files which were not reported by the remote device
+    for (QFileInfo unknownFile : localVCards)
+    {
+        QFile toDelete(unknownFile.filePath());
+        toDelete.remove();
     }
 
     this->sendRequestWithIDs(PACKET_TYPE_CONTACTS_REQUEST_VCARDS_BY_UIDS, uIDsToUpdate);
