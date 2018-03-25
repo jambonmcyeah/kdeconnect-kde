@@ -27,7 +27,7 @@
         "kdeconnect.contacts.request_vcards_by_uid"
     ],
     "X-KdeConnect-SupportedPacketType": [
-        "kdeconnect.contacts.response_uids",
+        "kdeconnect.contacts.response_uids_timestamps",
         "kdeconnect.contacts.response_vcards"
     ]
 }

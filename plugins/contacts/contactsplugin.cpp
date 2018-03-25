@@ -78,11 +78,20 @@ bool ContactsPlugin::handleResponseUIDsTimestamps(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDs:" << "Malformed packet does not have uids key";
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseUIDsTimestamps:" << "Malformed packet does not have uids key";
         return false;
     }
+    uIDList_t uIDsToUpdate;
 
     QStringList uIDs = np.get<QStringList>("uids");
+
+    // TODO: Check local storage... As soon as local storage is implemented. For now, just send everything
+    for (QString ID : uIDs)
+    {
+        uIDsToUpdate.push_back(ID.toLongLong());
+    }
+
+    this->sendRequestWithIDs(PACKET_TYPE_CONTACTS_REQUEST_VCARDS_BY_UIDS, uIDsToUpdate);
 
     return true;
 }
@@ -91,11 +100,17 @@ bool ContactsPlugin::handleResponseVCards(const NetworkPacket& np)
 {
     if (!np.has("uids"))
     {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseNames:" << "Malformed packet does not have uids key";
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Malformed packet does not have uids key";
         return false;
     }
 
     QStringList uIDs = np.get<QStringList>("uids");
+
+    for (auto ID : uIDs)
+    {
+        qWarning() << "Got VCard:" << np.get<QString>(ID);
+    }
+    qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Got" << uIDs.size() << "VCards";
     return true;
 }
 
