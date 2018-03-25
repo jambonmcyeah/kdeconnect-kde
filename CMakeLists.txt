@@ -19,11 +19,6 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS I18n ConfigWidgets DBusA
 find_package(KF5 ${KF5_MIN_VERSION} COMPONENTS DocTools)
 find_package(Qca-qt5 2.1.0 REQUIRED)
 
-find_package(KF5People CONFIG)
-set_package_properties(KF5People PROPERTIES DESCRIPTION "KPeople"
-   PURPOSE "Needed for contacts synchronization"
-  )
-
 include_directories(${CMAKE_SOURCE_DIR})
 
 configure_file(kdeconnect-version.h.in ${CMAKE_CURRENT_BINARY_DIR}/kdeconnect-version.h)

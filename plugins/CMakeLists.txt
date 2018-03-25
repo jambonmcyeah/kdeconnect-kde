@@ -4,6 +4,7 @@ install(FILES kdeconnect_plugin.desktop DESTINATION ${SERVICETYPES_INSTALL_DIR})
 
 add_subdirectory(ping)
 add_subdirectory(clipboard)
+add_subdirectory(contacts)
 add_subdirectory(telephony)
 add_subdirectory(share)
 add_subdirectory(notifications)
@@ -26,10 +27,6 @@ if(EXPERIMENTALAPP_ENABLED)
     add_subdirectory(mprisremote)
     add_subdirectory(remotecontrol)
     add_subdirectory(lockdevice)
-endif()
-
-if(KF5People_FOUND)
-	add_subdirectory(contacts)
 endif()
 
 #FIXME: If we split notifications in several files, they won't appear in the same group in the Notifications KCM
