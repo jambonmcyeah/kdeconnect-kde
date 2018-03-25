@@ -96,6 +96,13 @@ public:
 
     QString dbusPath() const override;
 
+protected:
+    /**
+     * Path where this instance of the plugin stores its synchronized contacts
+     */
+    QString vcardsPath;
+
+
 public Q_SLOTS:
 
     /**

@@ -41,6 +41,14 @@ Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_CONTACTS, "kdeconnect.plugin.contacts")
 ContactsPlugin::ContactsPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
 {
+    vcardsPath = QString(*vcardsLocation).append("/kdeconnect-").append(device()->id());
+
+    // Create the storage directory if it doesn't exist
+    if (! QDir().mkpath(vcardsPath))
+    {
+        qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to create VCard directory";
+    }
+
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Contacts constructor for device " << device()->name();
 }
 
@@ -105,15 +113,7 @@ bool ContactsPlugin::handleResponseVCards(const NetworkPacket& np)
         return false;
     }
 
-    // Create the storage directory if it doesn't exist
-    bool dirCreated = QDir().mkpath(*vcardsLocation);
-    if (!dirCreated)
-    {
-        qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to create VCard directory";
-        return false;
-    }
-    QDir vcardsDir(*vcardsLocation);
-
+    QDir vcardsDir(vcardsPath);
     QStringList uIDs = np.get<QStringList>("uids");
 
     // Loop over all IDs, extract the VCard from the packet and write the file
