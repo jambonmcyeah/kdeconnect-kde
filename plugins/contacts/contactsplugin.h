@@ -72,7 +72,9 @@
  * Where the synchronizer will write vcards and other metadata
  * TODO: Per-device folders since each device *will* have different uIDs
  */
-Q_GLOBAL_STATIC_WITH_ARGS(QString, vcardsLocation, (QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + ("/kpeoplevcard")))
+Q_GLOBAL_STATIC_WITH_ARGS(
+        QString, vcardsLocation,
+        (QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + ("/kpeoplevcard")))
 
 #define VCARD_EXTENSION QStringLiteral(".vcf")
 #define METADATA_EXTENSION QStringLiteral(".meta")
@@ -81,27 +83,25 @@ typedef qint64 uID_t;
 
 typedef QList<uID_t> uIDList_t;
 
-class Q_DECL_EXPORT ContactsPlugin
-    : public KdeConnectPlugin
-{
+class Q_DECL_EXPORT ContactsPlugin : public KdeConnectPlugin {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.contacts")
 
 public:
-    explicit ContactsPlugin(QObject *parent, const QVariantList &args);
-    ~ContactsPlugin() override;
+    explicit ContactsPlugin (QObject *parent, const QVariantList &args);
+    ~ContactsPlugin () override;
 
-    bool receivePacket(const NetworkPacket& np) override;
-    void connected() override {}
+    bool receivePacket (const NetworkPacket& np) override;
+    void connected () override {
+    }
 
-    QString dbusPath() const override;
+    QString dbusPath () const override;
 
 protected:
     /**
      * Path where this instance of the plugin stores its synchronized contacts
      */
     QString vcardsPath;
-
 
 public Q_SLOTS:
 
@@ -111,13 +111,16 @@ public Q_SLOTS:
      *      Update any contacts which are known locally but have an older timestamp
      *      Add any contacts which are not known locally but are reported by the remote
      */
-    Q_SCRIPTABLE void synchronizeRemoteWithLocal();
+    Q_SCRIPTABLE
+    void synchronizeRemoteWithLocal ();
 
-public: Q_SIGNALS:
+public:
+Q_SIGNALS:
     /**
      * Emitted to indicate that we have locally cached all remote contacts
      */
-    Q_SCRIPTABLE void localCacheSynchronized();
+    Q_SCRIPTABLE
+    void localCacheSynchronized ();
 
 protected:
 
@@ -129,19 +132,19 @@ protected:
      *      Compare the modified timestamp for each in the reply and update any which should have changed
      *      Request the details any IDs which were not locally cached
      */
-    bool handleResponseUIDsTimestamps(const NetworkPacket&);
+    bool handleResponseUIDsTimestamps (const NetworkPacket&);
 
     /**
      *  Handle a packet of type PACKET_TYPE_CONTACTS_RESPONSE_VCARDS
      */
-    bool handleResponseVCards(const NetworkPacket&);
+    bool handleResponseVCards (const NetworkPacket&);
 
     /**
-    * Send a request-type packet which contains no body
-    *
-    * @return True if the send was successful, false otherwise
-    */
-    bool sendRequest(QString packetType);
+     * Send a request-type packet which contains no body
+     *
+     * @return True if the send was successful, false otherwise
+     */
+    bool sendRequest (const QString& packetType);
 
     /**
      * Send a request-type packet which has a body with the key 'uids' and the value the list of
@@ -151,7 +154,7 @@ protected:
      * @param uIDs List of uIDs to request
      * @return True if the send was successful, false otherwise
      */
-    bool sendRequestWithIDs(QString packetType, uIDList_t uIDs);
+    bool sendRequestWithIDs (const QString& packetType, const uIDList_t& uIDs);
 };
 
 #endif // CONTACTSPLUGIN_H
