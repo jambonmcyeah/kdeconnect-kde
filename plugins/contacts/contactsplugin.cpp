@@ -158,7 +158,7 @@ bool ContactsPlugin::handleResponseVCards (const NetworkPacket& np) {
     }
 
     QDir vcardsDir(vcardsPath);
-    QStringList uIDs = np.get<QStringList>("uids");
+    const QStringList& uIDs = np.get<QStringList>("uids");
 
     // Loop over all IDs, extract the VCard from the packet and write the file
     for (const auto& ID : uIDs) {
