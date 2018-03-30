@@ -91,13 +91,13 @@ bool ContactsPlugin::handleResponseUIDsTimestamps (const NetworkPacket& np) {
     // Clean out IDs returned from the remote. Anything leftover should be deleted
     QFileInfoList localVCards = vcardsDir.entryInfoList( { "*.vcard", "*.vcf" });
 
-    QStringList uIDs = np.get<QStringList>("uids");
+    const QStringList& uIDs = np.get<QStringList>("uids");
 
     // Check local storage for the contacts:
     //  If the contact is not found in local storage, request its vcard be sent
     //  If the contact is in local storage but not reported, delete it
     //  If the contact is in local storage, compare its timestamp. If different, request the contact
-    for (QString ID : uIDs) {
+    for (const QString& ID : uIDs) {
         QString filename = vcardsDir.filePath(ID + VCARD_EXTENSION);
         QFile vcardFile(filename);
 
@@ -140,7 +140,7 @@ bool ContactsPlugin::handleResponseUIDsTimestamps (const NetworkPacket& np) {
     }
 
     // Delete all locally-known files which were not reported by the remote device
-    for (QFileInfo unknownFile : localVCards) {
+    for (const QFileInfo& unknownFile : localVCards) {
         QFile toDelete(unknownFile.filePath());
         toDelete.remove();
     }
@@ -161,7 +161,7 @@ bool ContactsPlugin::handleResponseVCards (const NetworkPacket& np) {
     QStringList uIDs = np.get<QStringList>("uids");
 
     // Loop over all IDs, extract the VCard from the packet and write the file
-    for (auto ID : uIDs) {
+    for (const auto& ID : uIDs) {
         qCDebug(KDECONNECT_PLUGIN_CONTACTS)
         << "Got VCard:" << np.get<QString>(ID);
         QString filename = vcardsDir.filePath(ID + VCARD_EXTENSION);
@@ -192,7 +192,7 @@ bool ContactsPlugin::sendRequestWithIDs (const QString& packetType, const uIDLis
 
     // Convert IDs to strings
     QStringList uIDsAsStrings;
-    for (auto uID : uIDs) {
+    for (const auto& uID : uIDs) {
         uIDsAsStrings.append(QString::number(uID));
     }
     np.set<QStringList>("uids", uIDsAsStrings);
