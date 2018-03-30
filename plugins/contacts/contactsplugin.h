@@ -79,9 +79,9 @@ Q_GLOBAL_STATIC_WITH_ARGS(
 #define VCARD_EXTENSION QStringLiteral(".vcf")
 #define METADATA_EXTENSION QStringLiteral(".meta")
 
-typedef qint64 uID_t;
+typedef QString uID;
 
-typedef QList<uID_t> uIDList_t;
+typedef QList<uID> uIDList_t;
 
 class Q_DECL_EXPORT ContactsPlugin : public KdeConnectPlugin {
     Q_OBJECT

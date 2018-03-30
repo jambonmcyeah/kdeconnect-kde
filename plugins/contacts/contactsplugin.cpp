@@ -103,7 +103,7 @@ bool ContactsPlugin::handleResponseUIDsTimestamps (const NetworkPacket& np) {
 
         if (!QFile().exists(filename)) {
             // We do not have a vcard for this contact. Request it.
-            uIDsToUpdate.push_back(ID.toLongLong());
+            uIDsToUpdate.push_back(ID);
             continue;
         }
 
@@ -134,7 +134,7 @@ bool ContactsPlugin::handleResponseUIDsTimestamps (const NetworkPacket& np) {
             qint32 localTimestamp = timestamp.toInt();
 
             if (!(localTimestamp == remoteTimestamp)) {
-                uIDsToUpdate.push_back(ID.toLongLong());
+                uIDsToUpdate.push_back(ID);
             }
         }
     }
@@ -162,8 +162,7 @@ bool ContactsPlugin::handleResponseVCards (const NetworkPacket& np) {
 
     // Loop over all IDs, extract the VCard from the packet and write the file
     for (const auto& ID : uIDs) {
-        qCDebug(KDECONNECT_PLUGIN_CONTACTS)
-        << "Got VCard:" << np.get<QString>(ID);
+        qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "Got VCard:" << np.get<QString>(ID);
         QString filename = vcardsDir.filePath(ID + VCARD_EXTENSION);
         QFile vcardFile(filename);
         bool vcardFileOpened = vcardFile.open(QIODevice::WriteOnly); // Want to smash anything that might have already been there
@@ -190,12 +189,7 @@ bool ContactsPlugin::sendRequest (const QString& packetType) {
 bool ContactsPlugin::sendRequestWithIDs (const QString& packetType, const uIDList_t& uIDs) {
     NetworkPacket np(packetType);
 
-    // Convert IDs to strings
-    QStringList uIDsAsStrings;
-    for (const auto& uID : uIDs) {
-        uIDsAsStrings.append(QString::number(uID));
-    }
-    np.set<QStringList>("uids", uIDsAsStrings);
+    np.set<uIDList_t>("uids", uIDs);
     bool success = sendPacket(np);
     return success;
 }
