@@ -179,7 +179,8 @@ bool ContactsPlugin::handleResponseVCards (const NetworkPacket& np) {
         }
 
         QTextStream fileWriteStream(&vcardFile);
-        fileWriteStream << np.get<QString>(ID);
+        const QString& vcard = np.get<QString>(ID);
+        fileWriteStream << vcard;
     }
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Got" << uIDs.size() << "VCards";
     Q_EMIT localCacheSynchronized(uIDs);
