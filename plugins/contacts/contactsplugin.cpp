@@ -43,6 +43,13 @@ ContactsPlugin::ContactsPlugin (QObject* parent, const QVariantList& args) :
         KdeConnectPlugin(parent, args) {
     vcardsPath = QString(*vcardsLocation).append("/kdeconnect-").append(device()->id());
 
+    // Register custom types with dbus
+    qRegisterMetaType<uID>("uID");
+    qDBusRegisterMetaType<uID>();
+
+    qRegisterMetaType<uIDList_t>("uIDList_t");
+    qDBusRegisterMetaType<uIDList_t>();
+
     // Create the storage directory if it doesn't exist
     if (!QDir().mkpath(vcardsPath)) {
         qCWarning(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Unable to create VCard directory";
@@ -175,6 +182,7 @@ bool ContactsPlugin::handleResponseVCards (const NetworkPacket& np) {
         fileWriteStream << np.get<QString>(ID);
     }
     qCDebug(KDECONNECT_PLUGIN_CONTACTS) << "handleResponseVCards:" << "Got" << uIDs.size() << "VCards";
+    Q_EMIT localCacheSynchronized(uIDs);
     return true;
 }
 

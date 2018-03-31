@@ -80,8 +80,10 @@ Q_GLOBAL_STATIC_WITH_ARGS(
 #define METADATA_EXTENSION QStringLiteral(".meta")
 
 typedef QString uID;
+Q_DECLARE_METATYPE(uID)
 
-typedef QList<uID> uIDList_t;
+typedef QStringList uIDList_t;
+Q_DECLARE_METATYPE(uIDList_t)
 
 class Q_DECL_EXPORT ContactsPlugin : public KdeConnectPlugin {
     Q_OBJECT
@@ -118,9 +120,11 @@ public:
 Q_SIGNALS:
     /**
      * Emitted to indicate that we have locally cached all remote contacts
+     *
+     * @param newContacts The list of just-synchronized contacts
      */
     Q_SCRIPTABLE
-    void localCacheSynchronized ();
+    void localCacheSynchronized (const uIDList_t& newContacts);
 
 protected:
 
