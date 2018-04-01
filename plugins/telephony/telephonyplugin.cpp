@@ -163,6 +163,13 @@ void TelephonyPlugin::showSendSmsDialog()
     dialog->raise();
 }
 
+void TelephonyPlugin::sendAllConversationsRequest()
+{
+    NetworkPacket np(PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATIONS);
+
+    sendPacket(np);
+}
+
 QString TelephonyPlugin::dbusPath() const
 {
     return "/modules/kdeconnect/devices/" + device()->id() + "/telephony";

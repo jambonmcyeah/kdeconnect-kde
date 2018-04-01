@@ -31,6 +31,8 @@
 #define PACKET_TYPE_TELEPHONY_REQUEST QStringLiteral("kdeconnect.telephony.request")
 #define PACKET_TYPE_SMS_REQUEST QStringLiteral("kdeconnect.sms.request")
 
+#define PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATIONS QStringLiteral("kdeconnect.telephony.request_conversations")
+
 Q_DECLARE_LOGGING_CATEGORY(KDECONNECT_PLUGIN_TELEPHONY)
 
 class TelephonyPlugin
@@ -48,6 +50,10 @@ public:
 
 public Q_SLOTS:
     Q_SCRIPTABLE void sendSms(const QString& phoneNumber, const QString& messageBody);
+    /**
+     * Send a request to the remote for all of its conversations
+     */
+    Q_SCRIPTABLE void sendAllConversationsRequest();
 
 private Q_SLOTS:
     void sendMutePacket();
