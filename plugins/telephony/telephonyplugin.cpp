@@ -55,6 +55,7 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
     {
         const telephonyMessage& message = convertPacketToMessage(np);
         this->forwardToTelepathy(message);
+        this->emitIncomingMessage(message);
     }
 
     return true;
@@ -126,6 +127,13 @@ bool TelephonyPlugin::forwardToTelepathy(const telephonyMessage& message)
     }
 
     return false;
+}
+
+bool TelephonyPlugin::emitIncomingMessage(const telephonyMessage& message)
+{
+    Q_EMIT incomingMessage(message);
+
+    return true;
 }
 
 QString TelephonyPlugin::dbusPath() const
