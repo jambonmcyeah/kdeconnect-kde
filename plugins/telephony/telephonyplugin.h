@@ -24,8 +24,6 @@
 #include <QLoggingCategory>
 #include <QDBusInterface>
 
-#include <KNotification>
-
 #include <core/kdeconnectplugin.h>
 
 #define PACKET_TYPE_TELEPHONY_REQUEST QStringLiteral("kdeconnect.telephony.request")
@@ -60,8 +58,6 @@ private Q_SLOTS:
     void showSendSmsDialog();
 
 private:
-    KNotification* createNotification(const NetworkPacket& np);
-
     QDBusInterface m_telepathyInterface;
 };
 
