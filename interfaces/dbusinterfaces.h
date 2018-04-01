@@ -36,6 +36,7 @@
 #include "interfaces/remotecommandsinterface.h"
 #include "interfaces/remotekeyboardinterface.h"
 #include "interfaces/telephonyinterface.h"
+#include "interfaces/messageinterface.h"
 
 /**
  * Using these "proxy" classes just in case we need to rename the
@@ -111,6 +112,19 @@ public:
     ~NotificationDbusInterface() override;
 
     QString notificationId() { return id; }
+private:
+    const QString id;
+};
+
+class KDECONNECTINTERFACES_EXPORT MessageDbusInterface
+    : public OrgKdeKdeconnectDeviceTelephonyMessagesInterface
+{
+    Q_OBJECT
+public:
+    MessageDbusInterface(const QString& deviceId, const QString& messageId, QObject* parent = nullptr);
+    ~MessageDbusInterface() override;
+
+    QString messageId() { return id; }
 private:
     const QString id;
 };

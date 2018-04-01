@@ -45,6 +45,7 @@ geninterface(${CMAKE_SOURCE_DIR}/plugins/lockdevice/lockdeviceplugin.h lockdevic
 geninterface(${CMAKE_SOURCE_DIR}/plugins/remotecommands/remotecommandsplugin.h remotecommandsinterface)
 geninterface(${CMAKE_SOURCE_DIR}/plugins/remotekeyboard/remotekeyboardplugin.h remotekeyboardinterface)
 geninterface(${CMAKE_SOURCE_DIR}/plugins/telephony/telephonyplugin.h telephonyinterface)
+geninterface(${CMAKE_SOURCE_DIR}/plugins/telephony/message.h messageinterface)
 
 
 add_library(kdeconnectinterfaces SHARED ${libkdeconnect_SRC})
