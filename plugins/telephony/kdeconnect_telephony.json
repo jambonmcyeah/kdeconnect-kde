@@ -93,6 +93,7 @@
         "kdeconnect.telephony.request_conversations"
     ],
     "X-KdeConnect-SupportedPacketType": [
-        "kdeconnect.telephony"
+        "kdeconnect.telephony",
+        "kdeconnect.telephony.message"
     ]
 }

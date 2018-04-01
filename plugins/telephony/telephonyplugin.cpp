@@ -22,6 +22,7 @@
 
 #include "sendreplydialog.h"
 
+#include <KLocalizedString>
 #include <QDebug>
 #include <QDBusReply>
 
@@ -43,6 +44,13 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
 
         //TODO: Clear the old notification
         return true;
+    }
+
+    const QString& event = np.get<QString>(QStringLiteral("event"), QStringLiteral("unknown"));
+
+    if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE || event == QLatin1String("sms"))
+    {
+        this->forwardToTelepathy(np);
     }
 
     return true;
@@ -81,6 +89,26 @@ void TelephonyPlugin::sendAllConversationsRequest()
     NetworkPacket np(PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATIONS);
 
     sendPacket(np);
+}
+
+bool TelephonyPlugin::forwardToTelepathy(const NetworkPacket& np)
+{
+    // In case telepathy can handle the message, don't do anything else
+    if (m_telepathyInterface.isValid()) {
+        qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Passing a text message to the telepathy interface";
+        connect(&m_telepathyInterface, SIGNAL(messageReceived(QString,QString)), SLOT(sendSms(QString,QString)), Qt::UniqueConnection);
+        const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
+        const QString contactName = "";
+        const QString phoneNumber = np.get<QString>(QStringLiteral("phoneNumber"), i18n("unknown number"));
+        QDBusReply<bool> reply = m_telepathyInterface.call(QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
+        if (reply) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    return false;
 }
 
 QString TelephonyPlugin::dbusPath() const
