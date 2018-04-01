@@ -38,7 +38,6 @@ TelephonyPlugin::TelephonyPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
     , m_telepathyInterface(QStringLiteral("org.freedesktop.Telepathy.ConnectionManager.kdeconnect"), QStringLiteral("/kdeconnect"))
 {
-    Message::registerDBus();
 }
 
 bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
@@ -53,9 +52,8 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
 
     if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE || event == QLatin1String("sms"))
     {
-        const Message& message = convertPacketToMessage(np);
+        Message message(np.body());
         this->forwardToTelepathy(message);
-        this->emitIncomingMessage(message);
     }
 
     return true;
@@ -96,19 +94,6 @@ void TelephonyPlugin::sendAllConversationsRequest()
     sendPacket(np);
 }
 
-Message TelephonyPlugin::convertPacketToMessage(const NetworkPacket& np)
-{
-    Message message;
-
-    for (const QString& key : np.body().keys())
-    {
-        const QString& field = np.body()[key].toString();
-        message[key] = field;
-    }
-
-    return message;
-}
-
 bool TelephonyPlugin::forwardToTelepathy(const Message& message)
 {
     // In case telepathy can handle the message, don't do anything else
@@ -127,13 +112,6 @@ bool TelephonyPlugin::forwardToTelepathy(const Message& message)
     }
 
     return false;
-}
-
-bool TelephonyPlugin::emitIncomingMessage(const Message& message)
-{
-    Q_EMIT incomingMessage(message);
-
-    return true;
 }
 
 QString TelephonyPlugin::dbusPath() const

@@ -18,26 +18,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtDBus>
+#include <QtCore>
+#include <QVariantMap>
 
 #include "message.h"
 
-const QString Message::ADDRESS = "address";
-const QString Message::BODY = "body";
-
-void Message::registerDBus()
-{
-    // Register custom types with dbus
-    qRegisterMetaType<Message>("Message");
-    qDBusRegisterMetaType<Message>();
+Message::Message(const QVariantMap& args, QObject* parent)
+    : QObject(parent) {
+    this->m_body = args["body"].toString();
+    this->m_address = args["address"].toString();
 }
 
-QString Message::getBody() const
-{
-    return this->operator [](BODY);
-}
-
-QString Message::getAddress() const
-{
-    return this->operator [](ADDRESS);
-}
+Message::~Message() { }

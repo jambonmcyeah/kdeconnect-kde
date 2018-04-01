@@ -81,27 +81,16 @@ public Q_SLOTS:
 
 public:
 Q_SIGNALS:
-    /**
-     * Emitted to indicated a message has arrived for handling
-     */
-    Q_SCRIPTABLE void incomingMessage(const Message& message);
 
 private Q_SLOTS:
     void sendMutePacket();
     void showSendSmsDialog();
 
 protected:
-    Message convertPacketToMessage(const NetworkPacket& np);
-
     /**
      * Send to the telepathy plugin if it is available
      */
     bool forwardToTelepathy(const Message& message);
-
-    /**
-     * Report that a message has arrived
-     */
-    bool emitIncomingMessage(const Message& message);
 
 private:
     QDBusInterface m_telepathyInterface;

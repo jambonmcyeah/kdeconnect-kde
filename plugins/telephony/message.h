@@ -21,15 +21,14 @@
 #ifndef PLUGINS_TELEPHONY_MESSAGE_H_
 #define PLUGINS_TELEPHONY_MESSAGE_H_
 
-#include <QtDBus>
-#include <QMap>
+#include <QObject>
 
-class Message: public QMap<QString, QString> {
+class Message: public QObject {
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
+    Q_PROPERTY(QString body READ getBody)
+    Q_PROPERTY(QString address READ getAddress)
 public:
-    // Field names as copied from Android's Telephony.Sms class
-    static const QString ADDRESS;
-    static const QString BODY;
-
     // TYPE field values from Android
     enum types
     {
@@ -42,12 +41,27 @@ public:
         MESSAGE_TYPE_QUEUED = 6,
     };
 
-    static void registerDBus();
+    /**
+     * Build a new message
+     *
+     * @param args mapping of field names to values as might be contained in a network packet containing a message
+     */
+    Message(const QVariantMap& args, QObject* parent = Q_NULLPTR);
+    ~Message();
 
-    QString getBody() const;
-    QString getAddress() const;
+    QString getBody() const { return m_body; }
+    QString getAddress() const { return m_address; }
+
+protected:
+    /**
+     * Body of the message
+     */
+    QString m_body;
+
+    /**
+     * Remote-side address of the message. Most likely a phone number, but may be an email address
+     */
+    QString m_address;
 };
-
-Q_DECLARE_METATYPE(Message)
 
 #endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
