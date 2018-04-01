@@ -30,6 +30,18 @@ public:
     static const QString ADDRESS;
     static const QString BODY;
 
+    // TYPE field values from Android
+    enum types
+    {
+        MESSAGE_TYPE_ALL = 0,
+        MESSAGE_TYPE_INBOX = 1,
+        MESSAGE_TYPE_SENT = 2,
+        MESSAGE_TYPE_DRAFT = 3,
+        MESSAGE_TYPE_OUTBOX = 4,
+        MESSAGE_TYPE_FAILED = 5,
+        MESSAGE_TYPE_QUEUED = 6,
+    };
+
     static void registerDBus();
 
     QString getBody() const;
