@@ -1,6 +1,6 @@
 set(kdeconnect_telephony_SRCS
     telephonyplugin.cpp
-    telephonyMessage.cpp
+    message.cpp
 )
 
 include_directories(${CMAKE_BINARY_DIR})

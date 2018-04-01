@@ -18,36 +18,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PLUGINS_TELEPHONY_MESSAGE_H_
-#define PLUGINS_TELEPHONY_MESSAGE_H_
-
 #include <QtDBus>
-#include <QMap>
 
-class telephonyMessage: public QMap<QString, QString> {
-public:
-    // Field names as copied from Android's Telephony.Sms class
-    static const QString ADDRESS;
-    static const QString BODY;
+#include "message.h"
 
-    // TYPE field values from Android
-    enum types
-    {
-        MESSAGE_TYPE_ALL = 0,
-        MESSAGE_TYPE_INBOX = 1,
-        MESSAGE_TYPE_SENT = 2,
-        MESSAGE_TYPE_DRAFT = 3,
-        MESSAGE_TYPE_OUTBOX = 4,
-        MESSAGE_TYPE_FAILED = 5,
-        MESSAGE_TYPE_QUEUED = 6,
-    };
+const QString Message::ADDRESS = "address";
+const QString Message::BODY = "body";
 
-    static void registerDBus();
+void Message::registerDBus()
+{
+    // Register custom types with dbus
+    qRegisterMetaType<Message>("Message");
+    qDBusRegisterMetaType<Message>();
+}
 
-    QString getBody() const;
-    QString getAddress() const;
-};
+QString Message::getBody() const
+{
+    return this->operator [](BODY);
+}
 
-Q_DECLARE_METATYPE(telephonyMessage)
-
-#endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
+QString Message::getAddress() const
+{
+    return this->operator [](ADDRESS);
+}

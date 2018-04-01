@@ -22,7 +22,7 @@
 #ifndef TELEPHONYPLUGIN_H
 #define TELEPHONYPLUGIN_H
 
-#include "telephonyMessage.h"
+#include "message.h"
 
 #include <QLoggingCategory>
 #include <QDBusInterface>
@@ -84,24 +84,24 @@ Q_SIGNALS:
     /**
      * Emitted to indicated a message has arrived for handling
      */
-    Q_SCRIPTABLE void incomingMessage(const telephonyMessage& message);
+    Q_SCRIPTABLE void incomingMessage(const Message& message);
 
 private Q_SLOTS:
     void sendMutePacket();
     void showSendSmsDialog();
 
 protected:
-    telephonyMessage convertPacketToMessage(const NetworkPacket& np);
+    Message convertPacketToMessage(const NetworkPacket& np);
 
     /**
      * Send to the telepathy plugin if it is available
      */
-    bool forwardToTelepathy(const telephonyMessage& message);
+    bool forwardToTelepathy(const Message& message);
 
     /**
      * Report that a message has arrived
      */
-    bool emitIncomingMessage(const telephonyMessage& message);
+    bool emitIncomingMessage(const Message& message);
 
 private:
     QDBusInterface m_telepathyInterface;

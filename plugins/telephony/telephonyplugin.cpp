@@ -21,7 +21,6 @@
 
 #include "telephonyplugin.h"
 
-#include "telephonyMessage.h"
 #include "sendreplydialog.h"
 
 #include <KLocalizedString>
@@ -29,6 +28,7 @@
 #include <QDBusReply>
 
 #include <KPluginFactory>
+#include "message.h"
 
 K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_telephony.json", registerPlugin< TelephonyPlugin >(); )
 
@@ -38,7 +38,7 @@ TelephonyPlugin::TelephonyPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
     , m_telepathyInterface(QStringLiteral("org.freedesktop.Telepathy.ConnectionManager.kdeconnect"), QStringLiteral("/kdeconnect"))
 {
-    telephonyMessage::registerDBus();
+    Message::registerDBus();
 }
 
 bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
@@ -53,7 +53,7 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
 
     if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE || event == QLatin1String("sms"))
     {
-        const telephonyMessage& message = convertPacketToMessage(np);
+        const Message& message = convertPacketToMessage(np);
         this->forwardToTelepathy(message);
         this->emitIncomingMessage(message);
     }
@@ -96,9 +96,9 @@ void TelephonyPlugin::sendAllConversationsRequest()
     sendPacket(np);
 }
 
-telephonyMessage TelephonyPlugin::convertPacketToMessage(const NetworkPacket& np)
+Message TelephonyPlugin::convertPacketToMessage(const NetworkPacket& np)
 {
-    telephonyMessage message;
+    Message message;
 
     for (const QString& key : np.body().keys())
     {
@@ -109,7 +109,7 @@ telephonyMessage TelephonyPlugin::convertPacketToMessage(const NetworkPacket& np
     return message;
 }
 
-bool TelephonyPlugin::forwardToTelepathy(const telephonyMessage& message)
+bool TelephonyPlugin::forwardToTelepathy(const Message& message)
 {
     // In case telepathy can handle the message, don't do anything else
     if (m_telepathyInterface.isValid()) {
@@ -129,7 +129,7 @@ bool TelephonyPlugin::forwardToTelepathy(const telephonyMessage& message)
     return false;
 }
 
-bool TelephonyPlugin::emitIncomingMessage(const telephonyMessage& message)
+bool TelephonyPlugin::emitIncomingMessage(const Message& message)
 {
     Q_EMIT incomingMessage(message);
 
