@@ -24,9 +24,10 @@
 #include "message.h"
 
 Message::Message(const QVariantMap& args, QObject* parent)
-    : QObject(parent) {
-    this->m_body = args["body"].toString();
-    this->m_address = args["address"].toString();
+    : QObject(parent),
+      m_body(args["body"].toString()),
+      m_address(args["address"].toString())
+      {
 }
 
 Message::~Message() { }
