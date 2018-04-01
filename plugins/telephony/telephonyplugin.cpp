@@ -50,10 +50,16 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
 
     const QString& event = np.get<QString>(QStringLiteral("event"), QStringLiteral("unknown"));
 
-    if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE || event == QLatin1String("sms"))
+    // Handle old-style packets
+    if (np.type() == PACKET_TYPE_TELEPHONY && event == QLatin1String("sms"))
     {
         Message message(np.body());
         this->forwardToTelepathy(message);
+    }
+
+    if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE)
+    {
+        return this->handleBatchMessages(np);
     }
 
     return true;
@@ -112,6 +118,19 @@ bool TelephonyPlugin::forwardToTelepathy(const Message& message)
     }
 
     return false;
+}
+
+bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
+{
+    auto messages = np.get<QVariantList>("messages");
+
+    for (QVariant body : messages)
+    {
+        Message message(body.toMap());
+        this->forwardToTelepathy(message);
+    }
+
+    return true;
 }
 
 QString TelephonyPlugin::dbusPath() const

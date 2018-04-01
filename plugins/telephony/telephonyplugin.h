@@ -30,17 +30,22 @@
 #include <core/kdeconnectplugin.h>
 
 /**
- * Packet used to indicate a message has been pushed from the remote device
+ * Packet used to indicate a batch of messages has been pushed from the remote device
  *
- * The body should contain a mapping of all fields of the message to their values
+ * The body should contain the key "messages" mapping to an array of messages
  *
  * For example:
- * { "event" : "sms",
- *   "messageBody" : "Hello",
- *   "phoneNumber" : "2021234567",
- *   "messageDate" : "20150321434",
- *   "messageType" : "-1",
- *   "threadID" : "132"
+ * { "messages" : [
+ *   { "event" : "sms",
+ *     "messageBody" : "Hello",
+ *     "phoneNumber" : "2021234567",
+ *      "messageDate" : "1518846484880",
+ *      "messageType" : "2",
+ *      "threadID" : "132"
+ *    },
+ *    { ... },
+ *     ...
+ *   ]
  * }
  */
 #define PACKET_TYPE_TELEPHONY_MESSAGE QStringLiteral("kdeconnect.telephony.message")
@@ -91,6 +96,11 @@ protected:
      * Send to the telepathy plugin if it is available
      */
     bool forwardToTelepathy(const Message& message);
+
+    /**
+     * Handle a packet which contains many messages, such as PACKET_TYPE_TELEPHONY_MESSAGE
+     */
+    bool handleBatchMessages(const NetworkPacket& np);
 
 private:
     QDBusInterface m_telepathyInterface;
