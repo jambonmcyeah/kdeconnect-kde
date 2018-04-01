@@ -1,5 +1,6 @@
 /**
  * Copyright 2013 Albert Vaca <albertvaka@gmail.com>
+ * Copyright 2018 Simon Redman <simon@ergotech.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +21,8 @@
 
 #ifndef TELEPHONYPLUGIN_H
 #define TELEPHONYPLUGIN_H
+
+#include "telephonyMessage.h"
 
 #include <QLoggingCategory>
 #include <QDBusInterface>
@@ -81,10 +84,12 @@ private Q_SLOTS:
     void showSendSmsDialog();
 
 protected:
+    telephonyMessage convertPacketToMessage(const NetworkPacket& np);
+
     /**
      * Send to the telepathy plugin if it is available
      */
-    bool forwardToTelepathy(const NetworkPacket& np);
+    bool forwardToTelepathy(const telephonyMessage& message);
 
 private:
     QDBusInterface m_telepathyInterface;

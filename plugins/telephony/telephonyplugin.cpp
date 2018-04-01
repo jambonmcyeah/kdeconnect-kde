@@ -1,5 +1,6 @@
 /**
  * Copyright 2013 Albert Vaca <albertvaka@gmail.com>
+ * Copyright 2018 Simon Redman <simon@ergotech.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +21,7 @@
 
 #include "telephonyplugin.h"
 
+#include "telephonyMessage.h"
 #include "sendreplydialog.h"
 
 #include <KLocalizedString>
@@ -36,6 +38,7 @@ TelephonyPlugin::TelephonyPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
     , m_telepathyInterface(QStringLiteral("org.freedesktop.Telepathy.ConnectionManager.kdeconnect"), QStringLiteral("/kdeconnect"))
 {
+    telephonyMessage::registerDBus();
 }
 
 bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
@@ -50,7 +53,8 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
 
     if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE || event == QLatin1String("sms"))
     {
-        this->forwardToTelepathy(np);
+        const telephonyMessage& message = convertPacketToMessage(np);
+        this->forwardToTelepathy(message);
     }
 
     return true;
@@ -91,15 +95,28 @@ void TelephonyPlugin::sendAllConversationsRequest()
     sendPacket(np);
 }
 
-bool TelephonyPlugin::forwardToTelepathy(const NetworkPacket& np)
+telephonyMessage TelephonyPlugin::convertPacketToMessage(const NetworkPacket& np)
+{
+    telephonyMessage message;
+
+    for (const QString& key : np.body().keys())
+    {
+        const QString& field = np.body()[key].toString();
+        message[key] = field;
+    }
+
+    return message;
+}
+
+bool TelephonyPlugin::forwardToTelepathy(const telephonyMessage& message)
 {
     // In case telepathy can handle the message, don't do anything else
     if (m_telepathyInterface.isValid()) {
         qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Passing a text message to the telepathy interface";
         connect(&m_telepathyInterface, SIGNAL(messageReceived(QString,QString)), SLOT(sendSms(QString,QString)), Qt::UniqueConnection);
-        const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
+        const QString messageBody = message.getBody();
         const QString contactName = "";
-        const QString phoneNumber = np.get<QString>(QStringLiteral("phoneNumber"), i18n("unknown number"));
+        const QString phoneNumber = message.getAddress();
         QDBusReply<bool> reply = m_telepathyInterface.call(QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
         if (reply) {
             return true;
