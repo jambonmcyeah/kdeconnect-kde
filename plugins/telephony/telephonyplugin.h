@@ -27,6 +27,8 @@
 #include <QLoggingCategory>
 #include <QDBusInterface>
 
+#include <KNotification>
+
 #include <core/kdeconnectplugin.h>
 
 /**
@@ -104,6 +106,8 @@ protected:
     bool handleBatchMessages(const NetworkPacket& np);
 
 private:
+    KNotification* createNotification(const NetworkPacket& np);
+
     QDBusInterface m_telepathyInterface;
 };
 
