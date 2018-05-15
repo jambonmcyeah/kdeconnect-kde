@@ -47,12 +47,12 @@ KNotification* TelephonyPlugin::createNotification(const NetworkPacket& np)
     const QString phoneNumber = np.get<QString>(QStringLiteral("phoneNumber"), i18n("unknown number"));
     const QString contactName = np.get<QString>(QStringLiteral("contactName"), phoneNumber);
     const QByteArray phoneThumbnail = QByteArray::fromBase64(np.get<QByteArray>(QStringLiteral("phoneThumbnail"), ""));
+    const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
 
     // In case telepathy can handle the message, don't do anything else
     if (event == QLatin1String("sms") && m_telepathyInterface.isValid()) {
         qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Passing a text message to the telepathy interface";
         connect(&m_telepathyInterface, SIGNAL(messageReceived(QString,QString)), SLOT(sendSms(QString,QString)), Qt::UniqueConnection);
-        const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
         QDBusReply<bool> reply = m_telepathyInterface.call(QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
         if (reply) {
             return nullptr;
@@ -111,7 +111,6 @@ KNotification* TelephonyPlugin::createNotification(const NetworkPacket& np)
         notification->setActions( QStringList(i18n("Mute Call")) );
         connect(notification, &KNotification::action1Activated, this, &TelephonyPlugin::sendMutePacket);
     } else if (event == QLatin1String("sms")) {
-        const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
         notification->setActions( QStringList(i18n("Reply")) );
         notification->setProperty("phoneNumber", phoneNumber);
         notification->setProperty("contactName", contactName);
@@ -134,10 +133,18 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
     const QString& event = np.get<QString>(QStringLiteral("event"), QStringLiteral("unknown"));
 
     // Handle old-style packets
-    if (np.type() == PACKET_TYPE_TELEPHONY && event == QLatin1String("sms"))
+    if (np.type() == PACKET_TYPE_TELEPHONY)
     {
-        Message message(np.body());
-        forwardToTelepathy(message);
+        if (event == QLatin1String("sms"))
+        {
+            // New-style packets should be a PACKET_TYPE_TELEPHONY_MESSAGE (15 May 2018)
+            qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Handled an old-style Telephony sms packet. You should update your Android app to get the latest features!";
+            Message message(np.body());
+            forwardToTelepathy(message);
+        }
+        KNotification* n = createNotification(np);
+        if (n != nullptr) n->sendEvent();
+        return true;
     }
 
     if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE)
