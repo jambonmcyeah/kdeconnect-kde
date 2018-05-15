@@ -106,6 +106,14 @@ protected:
     bool handleBatchMessages(const NetworkPacket& np);
 
 private:
+    /**
+     * Create a notification for:
+     *  - Incoming call (with the option to mute the ringing)
+     *  - Missed call
+     *  - Incoming SMS (with the option to reply)
+     *    - This comment is being written while SMS handling is in the process of being improved.
+     *      As such, any code in createNotification which deals with SMS is legacy support
+     */
     KNotification* createNotification(const NetworkPacket& np);
 
     QDBusInterface m_telepathyInterface;
