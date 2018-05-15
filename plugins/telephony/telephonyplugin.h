@@ -52,6 +52,18 @@
  */
 #define PACKET_TYPE_TELEPHONY_MESSAGE QStringLiteral("kdeconnect.telephony.message")
 
+/**
+ * Packet used for simple telephony events
+ *
+ * It contains the key "event" which maps to a string indicating the type of event:
+ *  - "ringing" - A phone call is incoming
+ *  - "missedCall" - An incoming call was not answered
+ *  - "sms" - An incoming SMS message
+ *   - Note: As of this writing (15 May 2018) the SMS interface is being improved and this type of event
+ *     is no longer the preferred way of retrieving SMS. Use PACKET_TYPE_TELEPHONY_MESSAGE instead.
+ *
+ *  Depending on the event, other fields may be defined
+ */
 #define PACKET_TYPE_TELEPHONY QStringLiteral("kdeconnect.telephony")
 
 #define PACKET_TYPE_TELEPHONY_REQUEST QStringLiteral("kdeconnect.telephony.request")
