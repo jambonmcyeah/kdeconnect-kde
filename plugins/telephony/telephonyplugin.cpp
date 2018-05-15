@@ -122,9 +122,9 @@ bool TelephonyPlugin::forwardToTelepathy(const Message& message)
 
 bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
 {
-    auto messages = np.get<QVariantList>("messages");
+    const auto messages = np.get<QVariantList>("messages");
 
-    for (QVariant body : messages)
+    for (const QVariant& body : messages)
     {
         Message message(body.toMap());
         this->forwardToTelepathy(message);

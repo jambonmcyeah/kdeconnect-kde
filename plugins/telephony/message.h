@@ -67,37 +67,37 @@ protected:
     /**
      * Body of the message
      */
-    QString m_body;
+    const QString m_body;
 
     /**
      * Remote-side address of the message. Most likely a phone number, but may be an email address
      */
-    QString m_address;
+    const QString m_address;
 
     /**
      * Date stamp (Unix epoch millis) associated with the message
      */
-    qint64 m_date;
+    const qint64 m_date;
 
     /**
      * Type of the message. See the message.type enum
      */
-    QString m_type;
+    const QString m_type;
 
     /**
      * Some way of connecting to the contact associated with the message
      */
-    QString m_person;
+    const QString m_person;
 
     /**
      * Whether we have a read report for this message
      */
-    qint32 m_read;
+    const qint32 m_read;
 
     /**
      * Tag which binds individual messages into a thread
      */
-    QString m_threadID;
+    const QString m_threadID;
 };
 
 #endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
