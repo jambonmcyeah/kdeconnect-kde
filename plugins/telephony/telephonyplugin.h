@@ -79,10 +79,11 @@ public:
 
 public Q_SLOTS:
     Q_SCRIPTABLE void sendSms(const QString& phoneNumber, const QString& messageBody);
+
     /**
      * Send a request to the remote for all of its conversations
      */
-    Q_SCRIPTABLE void sendAllConversationsRequest();
+    Q_SCRIPTABLE void requestAllConversations();
 
 public:
 Q_SIGNALS:
