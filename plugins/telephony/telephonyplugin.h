@@ -95,7 +95,7 @@ protected:
     /**
      * Send to the telepathy plugin if it is available
      */
-    bool forwardToTelepathy(const Message& message);
+    void forwardToTelepathy(const Message& message);
 
     /**
      * Handle a packet which contains many messages, such as PACKET_TYPE_TELEPHONY_MESSAGE

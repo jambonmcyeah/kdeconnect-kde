@@ -93,31 +93,24 @@ void TelephonyPlugin::showSendSmsDialog()
     dialog->raise();
 }
 
-void TelephonyPlugin::sendAllConversationsRequest()
+void TelephonyPlugin::requestAllConversations()
 {
     NetworkPacket np(PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATIONS);
 
     sendPacket(np);
 }
 
-bool TelephonyPlugin::forwardToTelepathy(const Message& message)
+void TelephonyPlugin::forwardToTelepathy(const Message& message)
 {
     // In case telepathy can handle the message, don't do anything else
     if (m_telepathyInterface.isValid()) {
         qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Passing a text message to the telepathy interface";
         connect(&m_telepathyInterface, SIGNAL(messageReceived(QString,QString)), SLOT(sendSms(QString,QString)), Qt::UniqueConnection);
         const QString messageBody = message.getBody();
-        const QString contactName = "";
+        const QString contactName; // TODO: When telepathy support is improved, look up the contact with KPeople
         const QString phoneNumber = message.getAddress();
-        QDBusReply<bool> reply = m_telepathyInterface.call(QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
-        if (reply) {
-            return true;
-        } else {
-            return false;
-        }
+        m_telepathyInterface.call(QDBus::NoBlock, QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
     }
-
-    return false;
 }
 
 bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
