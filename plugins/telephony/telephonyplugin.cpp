@@ -51,14 +51,10 @@ KNotification* TelephonyPlugin::createNotification(const NetworkPacket& np)
 
     // In case telepathy can handle the message, don't do anything else
     if (event == QLatin1String("sms") && m_telepathyInterface.isValid()) {
-        qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Passing a text message to the telepathy interface";
-        connect(&m_telepathyInterface, SIGNAL(messageReceived(QString,QString)), SLOT(sendSms(QString,QString)), Qt::UniqueConnection);
-        QDBusReply<bool> reply = m_telepathyInterface.call(QStringLiteral("sendMessage"), phoneNumber, contactName, messageBody);
-        if (reply) {
-            return nullptr;
-        } else {
-            qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Telepathy failed, falling back to the default handling";
-        }
+        // Telepathy has already been tried (in receivePacket)
+        // There is a chance that it somehow failed, but since nobody uses Telepathy anyway...
+        // TODO: When upgrading telepathy, handle failure case (in case m_telepathyInterface.call returns false)
+        return nullptr;
     }
 
     QString content, type, icon;
