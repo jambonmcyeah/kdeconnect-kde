@@ -36,16 +36,17 @@ class Message: public QObject {
 
 public:
     // TYPE field values from Android
-    enum types
+    enum Types
     {
-        MESSAGE_TYPE_ALL = 0,
-        MESSAGE_TYPE_INBOX = 1,
-        MESSAGE_TYPE_SENT = 2,
-        MESSAGE_TYPE_DRAFT = 3,
-        MESSAGE_TYPE_OUTBOX = 4,
-        MESSAGE_TYPE_FAILED = 5,
-        MESSAGE_TYPE_QUEUED = 6,
+        messageTypeAll = 0,
+        messageTypeInbox = 1,
+        messageTypeSent = 2,
+        messageTypeDraft = 3,
+        messageTypeOutbox = 4,
+        messageTypeFailed = 5,
+        messageTypeQueued = 6,
     };
+    Q_ENUM(Types);
 
     /**
      * Build a new message
