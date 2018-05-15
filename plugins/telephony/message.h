@@ -28,6 +28,12 @@ class Message: public QObject {
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
     Q_PROPERTY(QString body READ getBody)
     Q_PROPERTY(QString address READ getAddress)
+    Q_PROPERTY(QString date READ getDate)
+    Q_PROPERTY(QString type READ getType)
+    Q_PROPERTY(QString person READ getPerson)
+    Q_PROPERTY(QString read READ getRead)
+    Q_PROPERTY(QString threadID READ getThreadID)
+
 public:
     // TYPE field values from Android
     enum types
@@ -51,6 +57,11 @@ public:
 
     QString getBody() const { return m_body; }
     QString getAddress() const { return m_address; }
+    qint64 getDate() const { return m_date; }
+    QString getType() const { return m_type; }
+    QString getPerson() const { return m_person; }
+    qint32 getRead() const { return m_read; }
+    QString getThreadID() const { return m_threadID; }
 
 protected:
     /**
@@ -62,6 +73,31 @@ protected:
      * Remote-side address of the message. Most likely a phone number, but may be an email address
      */
     QString m_address;
+
+    /**
+     * Date stamp (Unix epoch millis) associated with the message
+     */
+    qint64 m_date;
+
+    /**
+     * Type of the message. See the message.type enum
+     */
+    QString m_type;
+
+    /**
+     * Some way of connecting to the contact associated with the message
+     */
+    QString m_person;
+
+    /**
+     * Whether we have a read report for this message
+     */
+    qint32 m_read;
+
+    /**
+     * Tag which binds individual messages into a thread
+     */
+    QString m_threadID;
 };
 
 #endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
