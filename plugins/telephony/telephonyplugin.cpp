@@ -54,12 +54,12 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
     if (np.type() == PACKET_TYPE_TELEPHONY && event == QLatin1String("sms"))
     {
         Message message(np.body());
-        this->forwardToTelepathy(message);
+        forwardToTelepathy(message);
     }
 
     if (np.type() == PACKET_TYPE_TELEPHONY_MESSAGE)
     {
-        return this->handleBatchMessages(np);
+        return handleBatchMessages(np);
     }
 
     return true;
@@ -120,7 +120,7 @@ bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
     for (const QVariant& body : messages)
     {
         Message message(body.toMap());
-        this->forwardToTelepathy(message);
+        forwardToTelepathy(message);
     }
 
     return true;
