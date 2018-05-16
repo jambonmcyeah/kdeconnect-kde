@@ -23,6 +23,7 @@
 #define TELEPHONYPLUGIN_H
 
 #include "message.h"
+#include "conversationsdbusinterface.h"
 
 #include <QLoggingCategory>
 #include <QDBusInterface>
@@ -129,6 +130,7 @@ private:
     KNotification* createNotification(const NetworkPacket& np);
 
     QDBusInterface m_telepathyInterface;
+    ConversationsDbusInterface m_conversationInterface;
 };
 
 #endif

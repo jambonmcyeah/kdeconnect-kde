@@ -22,6 +22,8 @@
 #include "telephonyplugin.h"
 
 #include "sendreplydialog.h"
+#include "message.h"
+#include "conversationsdbusinterface.h"
 
 #include <KLocalizedString>
 #include <QDebug>
@@ -29,7 +31,6 @@
 
 #include <KPluginFactory>
 #include <KNotification>
-#include "message.h"
 
 K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_telephony.json", registerPlugin< TelephonyPlugin >(); )
 
@@ -38,6 +39,7 @@ Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_TELEPHONY, "kdeconnect.plugin.telephony")
 TelephonyPlugin::TelephonyPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
     , m_telepathyInterface(QStringLiteral("org.freedesktop.Telepathy.ConnectionManager.kdeconnect"), QStringLiteral("/kdeconnect"))
+    , m_conversationInterface(this)
 {
 }
 
@@ -207,6 +209,7 @@ bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
     {
         Message message(body.toMap());
         forwardToTelepathy(message);
+        m_conversationInterface.addMessage(&message);
     }
 
     return true;

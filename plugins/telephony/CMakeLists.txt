@@ -1,6 +1,7 @@
 set(kdeconnect_telephony_SRCS
     telephonyplugin.cpp
     message.cpp
+    conversationsdbusinterface.cpp
 )
 
 include_directories(${CMAKE_BINARY_DIR})

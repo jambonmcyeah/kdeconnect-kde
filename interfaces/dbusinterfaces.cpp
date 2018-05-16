@@ -100,6 +100,17 @@ NotificationDbusInterface::~NotificationDbusInterface()
 
 }
 
+DeviceConversationsDbusInterface::DeviceConversationsDbusInterface(const QString& deviceId, QObject* parent)
+    : OrgKdeKdeconnectDeviceConversationsInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/"+deviceId, QDBusConnection::sessionBus(), parent)
+{
+
+}
+
+DeviceConversationsDbusInterface::~DeviceConversationsDbusInterface()
+{
+
+}
+
 MessageDbusInterface::MessageDbusInterface(const QString& deviceId, const QString& messageId, QObject* parent)
     : OrgKdeKdeconnectDeviceTelephonyMessagesInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/" + deviceId + "/telephony/messages/" + messageId, QDBusConnection::sessionBus(), parent)
     , id (messageId)
