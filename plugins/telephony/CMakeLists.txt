@@ -1,6 +1,5 @@
 set(kdeconnect_telephony_SRCS
     telephonyplugin.cpp
-    message.cpp
     conversationsdbusinterface.cpp
 )
 
