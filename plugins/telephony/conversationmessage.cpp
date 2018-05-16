@@ -18,12 +18,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "conversationmessage.h"
+
 #include <QtCore>
 #include <QVariantMap>
 
-#include "message.h"
 
-Message::Message(const QVariantMap& args, QObject* parent)
+ConversationMessage::ConversationMessage(const QVariantMap& args, QObject* parent)
     : QObject(parent),
       m_body(args["body"].toString()),
       m_address(args["address"].toString()),
@@ -34,7 +35,7 @@ Message::Message(const QVariantMap& args, QObject* parent)
       {
 }
 
-Message::Message(const Message& other, QObject* parent)
+ConversationMessage::ConversationMessage(const ConversationMessage& other, QObject* parent)
     : QObject(parent)
     , m_body(other.m_body)
     , m_address(other.m_address)
@@ -46,9 +47,9 @@ Message::Message(const Message& other, QObject* parent)
 
 }
 
-Message::~Message() { }
+ConversationMessage::~ConversationMessage() { }
 
-Message& Message::operator=(const Message& other)
+ConversationMessage& ConversationMessage::operator=(const ConversationMessage& other)
 {
     this->m_body = other.m_body;
     this->m_address = other.m_address;
@@ -59,7 +60,7 @@ Message& Message::operator=(const Message& other)
     return *this;
 }
 
-QDBusArgument &operator<<(QDBusArgument &argument, const Message &message)
+QDBusArgument &operator<<(QDBusArgument &argument, const ConversationMessage &message)
 {
     argument.beginStructure();
     argument << message.m_body << message.m_address << message.m_date << message.m_type
@@ -68,7 +69,7 @@ QDBusArgument &operator<<(QDBusArgument &argument, const Message &message)
     return argument;
 }
 
-const QDBusArgument &operator>>(const QDBusArgument &argument, Message &message)
+const QDBusArgument &operator>>(const QDBusArgument &argument, ConversationMessage &message)
 {
     argument.beginStructure();
     argument >> message.m_body >> message.m_address >> message.m_date >> message.m_type
@@ -77,7 +78,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, Message &message)
     return argument;
 }
 
-void Message::registerDbusType()
+void ConversationMessage::registerDbusType()
 {
-    qDBusRegisterMetaType<Message>();
+    qDBusRegisterMetaType<ConversationMessage>();
 }

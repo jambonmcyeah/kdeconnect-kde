@@ -29,8 +29,8 @@
 #include <QDir>
 #include <QPointer>
 
+#include "conversationmessage.h"
 #include "interfaces/dbusinterfaces.h"
-#include "message.h"
 
 class KdeConnectPlugin;
 class Device;
@@ -45,7 +45,7 @@ public:
     explicit ConversationsDbusInterface(KdeConnectPlugin* plugin);
     ~ConversationsDbusInterface() override;
 
-    void addMessage(Message* message);
+    void addMessage(ConversationMessage* message);
     void removeMessage(const QString& internalId);
 
 public Q_SLOTS:
@@ -57,7 +57,7 @@ public Q_SLOTS:
     /**
      * Get the first message in the requested conversation
      */
-    Message getFirstFromConversation(const QString& conversationId);
+    ConversationMessage getFirstFromConversation(const QString& conversationId);
 
     /**
      * Send a new message to this conversation
@@ -85,7 +85,7 @@ private /*attributes*/:
     /**
      * Mapping of threadID to the list of messages which make up that thread
      */
-    QHash<QString, QList<QPointer<Message>>> m_conversations;
+    QHash<QString, QList<QPointer<ConversationMessage>>> m_conversations;
     int m_lastId;
 
     TelephonyDbusInterface m_telephonyInterface;

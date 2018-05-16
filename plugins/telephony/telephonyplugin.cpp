@@ -22,7 +22,6 @@
 #include "telephonyplugin.h"
 
 #include "sendreplydialog.h"
-#include "message.h"
 #include "conversationsdbusinterface.h"
 
 #include <KLocalizedString>
@@ -31,6 +30,7 @@
 
 #include <KPluginFactory>
 #include <KNotification>
+#include "conversationmessage.h"
 
 K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_telephony.json", registerPlugin< TelephonyPlugin >(); )
 
@@ -137,7 +137,7 @@ bool TelephonyPlugin::receivePacket(const NetworkPacket& np)
         {
             // New-style packets should be a PACKET_TYPE_TELEPHONY_MESSAGE (15 May 2018)
             qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Handled an old-style Telephony sms packet. You should update your Android app to get the latest features!";
-            Message message(np.body());
+            ConversationMessage message(np.body());
             forwardToTelepathy(message);
         }
         KNotification* n = createNotification(np);
@@ -188,7 +188,7 @@ void TelephonyPlugin::requestAllConversations()
     sendPacket(np);
 }
 
-void TelephonyPlugin::forwardToTelepathy(const Message& message)
+void TelephonyPlugin::forwardToTelepathy(const ConversationMessage& message)
 {
     // In case telepathy can handle the message, don't do anything else
     if (m_telepathyInterface.isValid()) {
@@ -207,7 +207,7 @@ bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
 
     for (const QVariant& body : messages)
     {
-        Message* message = new Message(body.toMap());
+        ConversationMessage* message = new ConversationMessage(body.toMap());
         forwardToTelepathy(*message);
         m_conversationInterface.addMessage(message);
     }

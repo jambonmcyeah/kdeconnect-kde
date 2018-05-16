@@ -18,15 +18,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PLUGINS_TELEPHONY_MESSAGE_H_
-#define PLUGINS_TELEPHONY_MESSAGE_H_
+#ifndef PLUGINS_TELEPHONY_CONVERSATIONMESSAGE_H_
+#define PLUGINS_TELEPHONY_CONVERSATIONMESSAGE_H_
 
 #include <QObject>
 #include <QDBusMetaType>
 #include <QDBusArgument>
 #include <QVariantMap>
 
-class Message: public QObject {
+class ConversationMessage: public QObject {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
     Q_PROPERTY(QString body READ getBody)
@@ -55,10 +55,10 @@ public:
      *
      * @param args mapping of field names to values as might be contained in a network packet containing a message
      */
-    Message(const QVariantMap& args = QVariantMap(), QObject* parent = Q_NULLPTR);
-    Message(const Message& other, QObject* parent = Q_NULLPTR);
-    ~Message();
-    Message& operator=(const Message& other);
+    ConversationMessage(const QVariantMap& args = QVariantMap(), QObject* parent = Q_NULLPTR);
+    ConversationMessage(const ConversationMessage& other, QObject* parent = Q_NULLPTR);
+    ~ConversationMessage();
+    ConversationMessage& operator=(const ConversationMessage& other);
     static void registerDbusType();
 
     QString getBody() const { return m_body; }
@@ -100,6 +100,6 @@ public:
     qint32 m_threadID;
 };
 
-Q_DECLARE_METATYPE(Message);
+Q_DECLARE_METATYPE(ConversationMessage);
 
-#endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
+#endif /* PLUGINS_TELEPHONY_CONVERSATIONMESSAGE_H_ */

@@ -19,13 +19,13 @@
  */
 
 #include "conversationsdbusinterface.h"
-#include "message.h"
 #include "interfaces/dbusinterfaces.h"
 
 #include <QDBusConnection>
 
 #include <core/device.h>
 #include <core/kdeconnectplugin.h>
+#include "conversationmessage.h"
 
 #include "telephonyplugin.h"
 
@@ -36,7 +36,7 @@ ConversationsDbusInterface::ConversationsDbusInterface(KdeConnectPlugin* plugin)
     , m_lastId(0)
     , m_telephonyInterface(m_device->id())
 {
-    Message::registerDbusType();
+    ConversationMessage::registerDbusType();
 }
 
 ConversationsDbusInterface::~ConversationsDbusInterface()
@@ -50,21 +50,21 @@ QStringList ConversationsDbusInterface::activeConversations()
     return m_conversations.keys();
 }
 
-Message ConversationsDbusInterface::getFirstFromConversation(const QString& conversationId)
+ConversationMessage ConversationsDbusInterface::getFirstFromConversation(const QString& conversationId)
 {
-    const QList<QPointer<Message>> messagesList = m_conversations[conversationId];
+    const QList<QPointer<ConversationMessage>> messagesList = m_conversations[conversationId];
 
     if (messagesList.isEmpty())
     {
         // Since there are no messages in the conversation, we can't do anything sensible
         qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
-        return Message();
+        return ConversationMessage();
     }
 
     return *messagesList.first().data();
 }
 
-void ConversationsDbusInterface::addMessage(Message* message)
+void ConversationsDbusInterface::addMessage(ConversationMessage* message)
 {
     // Dump the Message on DBus. I am not convinced this is the right or even a sane way to handle messages.
     const QString& publicId = newId();
@@ -92,7 +92,7 @@ void ConversationsDbusInterface::removeMessage(const QString& internalId)
 
 void ConversationsDbusInterface::replyToConversation(const QString& conversationID, const QString& message)
 {
-    const QList<QPointer<Message>> messagesList = m_conversations[conversationID];
+    const QList<QPointer<ConversationMessage>> messagesList = m_conversations[conversationID];
     if (messagesList.isEmpty())
     {
         // Since there are no messages in the conversation, we can't do anything sensible

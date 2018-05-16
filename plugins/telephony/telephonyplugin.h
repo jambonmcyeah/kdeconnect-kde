@@ -22,7 +22,6 @@
 #ifndef TELEPHONYPLUGIN_H
 #define TELEPHONYPLUGIN_H
 
-#include "message.h"
 #include "conversationsdbusinterface.h"
 
 #include <QLoggingCategory>
@@ -31,6 +30,7 @@
 #include <KNotification>
 
 #include <core/kdeconnectplugin.h>
+#include "conversationmessage.h"
 
 /**
  * Packet used to indicate a batch of messages has been pushed from the remote device
@@ -111,7 +111,7 @@ protected:
     /**
      * Send to the telepathy plugin if it is available
      */
-    void forwardToTelepathy(const Message& message);
+    void forwardToTelepathy(const ConversationMessage& message);
 
     /**
      * Handle a packet which contains many messages, such as PACKET_TYPE_TELEPHONY_MESSAGE
