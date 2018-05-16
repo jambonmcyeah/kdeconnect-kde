@@ -1,5 +1,7 @@
 /**
- * Copyright 2014 Ahmed I. Khalil <albertvaka@gmail.com>
+ * Copyright 2018 Albert Vaca Cintora <albertvaka@gmail.com>
+ * Copyright 2015 Martin Gräßlin <mgraesslin@kde.org>
+ * Copyright 2014 Ahmed I. Khalil <ahmedibrahimkhali@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,21 +23,12 @@
 #ifndef MOUSEPADPLUGIN_H
 #define MOUSEPADPLUGIN_H
 
-#include <QtGui/QCursor>
 #include <core/kdeconnectplugin.h>
 #include <config-mousepad.h>
 
-struct FakeKey;
+#include "abstractremoteinput.h"
 
-#if HAVE_WAYLAND
-namespace KWayland
-{
-namespace Client
-{
-class FakeInput;
-}
-}
-#endif
+#define PACKET_TYPE_MOUSEPAD_KEYBOARDSTATE QLatin1String("kdeconnect.mousepad.keyboardstate")
 
 class MousepadPlugin
     : public KdeConnectPlugin
@@ -47,25 +40,11 @@ public:
     ~MousepadPlugin() override;
 
     bool receivePacket(const NetworkPacket& np) override;
-    void connected() override { }
+    void connected() override;
 
 private:
-#if HAVE_X11
-    bool handlePacketX11(const NetworkPacket& np);
-#endif
-#if HAVE_WAYLAND
-    void setupWaylandIntegration();
-    bool handPacketWayland(const NetworkPacket& np);
-#endif
+    AbstractRemoteInput* m_impl;
 
-#if HAVE_X11
-    FakeKey* m_fakekey;
-#endif
-    const bool m_x11;
-#if HAVE_WAYLAND
-    KWayland::Client::FakeInput* m_waylandInput;
-    bool m_waylandAuthenticationRequested;
-#endif
 };
 
 #endif

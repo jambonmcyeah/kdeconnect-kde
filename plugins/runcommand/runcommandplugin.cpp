@@ -29,6 +29,7 @@
 #include <QSettings>
 #include <QJsonDocument>
 #include <KShell>
+#include <kcmutils_version.h>
 
 #include <core/networkpacket.h>
 #include <core/device.h>
@@ -68,6 +69,8 @@ bool RunCommandPlugin::receivePacket(const NetworkPacket& np)
         qCInfo(KDECONNECT_PLUGIN_RUNCOMMAND) << "Running:" << "/bin/sh" << "-c" << commandJson[QStringLiteral("command")].toString();
         QProcess::startDetached(QStringLiteral("/bin/sh"), QStringList()<< QStringLiteral("-c") << commandJson[QStringLiteral("command")].toString());
         return true;
+    } else if (np.has("setup")) {
+        QProcess::startDetached(QStringLiteral("kcmshell5"), {QStringLiteral("kdeconnect"), QStringLiteral("--args"), QString(device()->id() + QStringLiteral(":kdeconnect_runcommand")) });
     }
 
     return false;
@@ -83,6 +86,11 @@ void RunCommandPlugin::sendConfig()
 {
     QString commands = config()->get<QString>(QStringLiteral("commands"),QStringLiteral("{}"));
     NetworkPacket np(PACKET_TYPE_RUNCOMMAND, {{"commandList", commands}});
+
+    #if KCMUTILS_VERSION >= QT_VERSION_CHECK(5, 45, 0)
+        np.set<bool>(QStringLiteral("canAddCommand"), true);
+    #endif
+
     sendPacket(np);
 }
 

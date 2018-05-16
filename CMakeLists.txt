@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.0)
 project(kdeconnect)
 
 set(KDECONNECT_VERSION_MAJOR 1)
-set(KDECONNECT_VERSION_MINOR 2)
-set(KDECONNECT_VERSION_PATCH 1)
+set(KDECONNECT_VERSION_MINOR 3)
+set(KDECONNECT_VERSION_PATCH 0)
 set(KDECONNECT_VERSION "${KDECONNECT_VERSION_MAJOR}.${KDECONNECT_VERSION_MINOR}.${KDECONNECT_VERSION_PATCH}")
 
 set(QT_MIN_VERSION "5.7.0")
@@ -15,9 +15,17 @@ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_SOURCE_DI
 
 find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Quick)
 
-find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS I18n ConfigWidgets DBusAddons IconThemes Notifications KIO KCMUtils)
-find_package(KF5 ${KF5_MIN_VERSION} COMPONENTS DocTools)
+find_package(KF5 ${KF5_MIN_VERSION}
+    REQUIRED COMPONENTS I18n ConfigWidgets DBusAddons IconThemes Notifications KIO KCMUtils
+    OPTIONAL_COMPONENTS DocTools
+)
 find_package(Qca-qt5 2.1.0 REQUIRED)
+find_package(Phonon4Qt5 4.9.0 NO_MODULE)
+set_package_properties(Phonon4Qt5 PROPERTIES
+   DESCRIPTION "Qt-based audio library"
+   TYPE OPTIONAL
+   PURPOSE "Required for Find My Device plugin"
+)
 
 include_directories(${CMAKE_SOURCE_DIR})
 

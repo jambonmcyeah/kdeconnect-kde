@@ -22,26 +22,25 @@ import QtQuick 2.1
 import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.1
 import org.kde.kirigami 2.2 as Kirigami
+import org.kde.kdeconnect.sms 1.0
 
 Kirigami.ScrollablePage
 {
     id: page
-    readonly property string phoneNumber: person.contactCustomProperty("phoneNumber")
-    title: i18n("%1: %2", person.name, phoneNumber)
     property QtObject person
     property QtObject device
 
-    readonly property QtObject telephony: TelephonyDbusInterfaceFactory.create(device.id())
+    readonly property string phoneNumber: person.contactCustomProperty("phoneNumber")
+    readonly property QtObject telephony: device ? TelephonyDbusInterfaceFactory.create(device.id()) : null
+    title: i18n("%1: %2", person.name, phoneNumber)
 
     ListView {
-        model: ListModel {
-            ListElement { display: "aaa"; fromMe: true }
-            ListElement { display: "aaa" }
-            ListElement { display: "aaa"; fromMe: true }
-            ListElement { display: "aaa" }
-            ListElement { display: "aaa" }
-            ListElement { display: "aaa" }
+        model: ConversationModel {
+            id: model
+            deviceId: device.id()
+            threadId: "xxxx"
         }
+
         delegate: Kirigami.BasicListItem {
             readonly property real margin: 100
             x: fromMe ? Kirigami.Units.gridUnit : margin
@@ -50,16 +49,20 @@ Kirigami.ScrollablePage
         }
     }
     footer: RowLayout {
+        enabled: page.device
         TextField {
             id: message
             Layout.fillWidth: true
             placeholderText: i18n("Say hi...")
+            onAccepted: {
+                console.log("sending sms", page.phoneNumber)
+                page.telephony.sendSms(page.phoneNumber, message.text)
+            }
         }
         Button {
             text: "Send"
             onClicked: {
-                console.log("sending sms", page.phoneNumber)
-                page.telephony.sendSms(page.phoneNumber, message.text)
+                message.accepted()
             }
         }
     }

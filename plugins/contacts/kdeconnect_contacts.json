@@ -1,0 +1,59 @@
+{
+    "Encoding": "UTF-8",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "simon@ergotech.com",
+                "Name": "Simon Redman",
+                "Name[x-test]": "xxSimon Redmanxx"
+            }
+        ],
+        "Description": "Synchronize Contacts Between the Desktop and the Connected Device",
+        "Description[ca@valencia]": "Sincronitza els contactes entre l'escriptori i el dispositiu connectat",
+        "Description[ca]": "Sincronitza els contactes entre l'escriptori i el dispositiu connectat",
+        "Description[cs]": "Synchronizovat kontakty mezi pracovní plochou a připojeným zařízením",
+        "Description[en_GB]": "Synchronise Contacts Between the Desktop and the Connected Device",
+        "Description[es]": "Sincronizar contactos entre el equipo de escritorio y el dispositivo conectado",
+        "Description[gl]": "Sincronizar contactos entre o escritorio e o dispositivo conectado",
+        "Description[it]": "Sincronizza contatti tra il desktop e il dispositivo connesso",
+        "Description[nl]": "Contactpersonen synchroniseren tussen het bureaublad en het verbonden apparaat",
+        "Description[nn]": "Synkroniser kontaktar mellom skrivebordet og tilkopla eining",
+        "Description[pt]": "Sincronizar os Contactos entre o Sistema e o Dispositivo Ligado",
+        "Description[sv]": "Synkronisera kontakter mellan skrivbordet och ansluten enhet",
+        "Description[uk]": "Синхронізація контактів між комп'ютером і з'єднаним пристроєм",
+        "Description[x-test]": "xxSynchronize Contacts Between the Desktop and the Connected Devicexx",
+        "Description[zh_TW]": "在電腦與連線裝置之間同步聯絡人",
+        "EnabledByDefault": true,
+        "Icon": "dialog-ok",
+        "Id": "kdeconnect_contacts",
+        "License": "GPL",
+        "Name": "Contacts",
+        "Name[ca@valencia]": "Contactes",
+        "Name[ca]": "Contactes",
+        "Name[cs]": "Kontakty",
+        "Name[es]": "Contactos",
+        "Name[gl]": "Contactos",
+        "Name[it]": "Contatti",
+        "Name[nl]": "Contactpersonen",
+        "Name[nn]": "Kontaktar",
+        "Name[pt]": "Contactos",
+        "Name[sv]": "Kontakter",
+        "Name[uk]": "Контакти",
+        "Name[x-test]": "xxContactsxx",
+        "Name[zh_CN]": "联系人",
+        "Name[zh_TW]": "聯絡人",
+        "ServiceTypes": [
+            "KdeConnect/Plugin"
+        ],
+        "Version": "0.1",
+        "Website": "http://albertvaka.wordpress.com"
+    },
+    "X-KdeConnect-OutgoingPacketType": [
+        "kdeconnect.contacts.request_all_uids_timestamps",
+        "kdeconnect.contacts.request_vcards_by_uid"
+    ],
+    "X-KdeConnect-SupportedPacketType": [
+        "kdeconnect.contacts.response_uids_timestamps",
+        "kdeconnect.contacts.response_vcards"
+    ]
+}
