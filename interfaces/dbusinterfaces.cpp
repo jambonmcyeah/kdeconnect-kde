@@ -111,18 +111,6 @@ DeviceConversationsDbusInterface::~DeviceConversationsDbusInterface()
 
 }
 
-MessageDbusInterface::MessageDbusInterface(const QString& deviceId, const QString& messageId, QObject* parent)
-    : OrgKdeKdeconnectDeviceTelephonyMessagesInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/" + deviceId + "/telephony/messages/" + messageId, QDBusConnection::sessionBus(), parent)
-    , id (messageId)
-{
-
-}
-
-MessageDbusInterface::~MessageDbusInterface()
-{
-
-}
-
 SftpDbusInterface::SftpDbusInterface(const QString& id, QObject* parent)
     : OrgKdeKdeconnectDeviceSftpInterface(DaemonDbusInterface::activatedService(), "/modules/kdeconnect/devices/" + id + "/sftp", QDBusConnection::sessionBus(), parent)
 {

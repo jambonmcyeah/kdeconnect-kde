@@ -126,20 +126,6 @@ public:
     ~DeviceConversationsDbusInterface() override;
 };
 
-class KDECONNECTINTERFACES_EXPORT MessageDbusInterface
-    : public OrgKdeKdeconnectDeviceTelephonyMessagesInterface
-{
-    Q_OBJECT
-public:
-    MessageDbusInterface(const QString& deviceId, const QString& messageId, QObject* parent = nullptr);
-    ~MessageDbusInterface() override;
-
-    QString messageId() { return id; }
-private:
-    const QString id;
-};
-
-
 class KDECONNECTINTERFACES_EXPORT SftpDbusInterface
     : public OrgKdeKdeconnectDeviceSftpInterface
 {
