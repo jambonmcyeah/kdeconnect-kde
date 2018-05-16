@@ -29,7 +29,6 @@ Message::Message(const QVariantMap& args, QObject* parent)
       m_address(args["address"].toString()),
       m_date(args["date"].toLongLong()),
       m_type(args["type"].toString()),
-      m_person(args["person"].toString()),
       m_read(args["read"].toInt()),
       m_threadID(args["thread_id"].toString())
       {

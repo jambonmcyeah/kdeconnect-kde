@@ -30,7 +30,6 @@ class Message: public QObject {
     Q_PROPERTY(QString address READ getAddress)
     Q_PROPERTY(QString date READ getDate)
     Q_PROPERTY(QString type READ getType)
-    Q_PROPERTY(QString person READ getPerson)
     Q_PROPERTY(QString read READ getRead)
     Q_PROPERTY(QString threadID READ getThreadID)
 
