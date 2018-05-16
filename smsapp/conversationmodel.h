@@ -22,6 +22,11 @@
 #define CONVERSATIONMODEL_H
 
 #include <QStandardItemModel>
+#include <QLoggingCategory>
+
+#include "interfaces/dbusinterfaces.h"
+
+Q_DECLARE_LOGGING_CATEGORY(KDECONNECT_SMS)
 
 class ConversationModel : public QStandardItemModel
 {
@@ -31,14 +36,22 @@ class ConversationModel : public QStandardItemModel
 
 public:
     ConversationModel(QObject* parent = nullptr);
+    ~ConversationModel();
 
     enum Roles { FromMeRole = Qt::UserRole };
 
     QString threadId() const;
     void setThreadId(const QString &threadId);
 
-    QString deviceId() const { return {}; }
-    void setDeviceId(const QString &/*deviceId*/) {}
+    QString deviceId() const { return m_deviceId; }
+    void setDeviceId(const QString &/*deviceId*/);
+
+    Q_INVOKABLE void sendReplyToConversation(const QString& message);
+
+private:
+    DeviceConversationsDbusInterface* m_conversationsInterface;
+    QString m_deviceId;
+    QString m_threadId;
 };
 
 #endif // CONVERSATIONMODEL_H
