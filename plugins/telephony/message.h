@@ -22,6 +22,9 @@
 #define PLUGINS_TELEPHONY_MESSAGE_H_
 
 #include <QObject>
+#include <QDBusMetaType>
+#include <QDBusArgument>
+#include <QVariantMap>
 
 class Message: public QObject {
     Q_OBJECT
@@ -52,8 +55,11 @@ public:
      *
      * @param args mapping of field names to values as might be contained in a network packet containing a message
      */
-    Message(const QVariantMap& args, QObject* parent = Q_NULLPTR);
+    Message(const QVariantMap& args = QVariantMap(), QObject* parent = Q_NULLPTR);
+    Message(const Message& other, QObject* parent = Q_NULLPTR);
     ~Message();
+    Message& operator=(const Message& other);
+    static void registerDbusType();
 
     QString getBody() const { return m_body; }
     QString getAddress() const { return m_address; }
@@ -62,36 +68,38 @@ public:
     qint32 getRead() const { return m_read; }
     qint32 getThreadID() const { return m_threadID; }
 
-protected:
+public:
     /**
      * Body of the message
      */
-    const QString m_body;
+    QString m_body;
 
     /**
      * Remote-side address of the message. Most likely a phone number, but may be an email address
      */
-    const QString m_address;
+    QString m_address;
 
     /**
      * Date stamp (Unix epoch millis) associated with the message
      */
-    const qint64 m_date;
+    qint64 m_date;
 
     /**
      * Type of the message. See the message.type enum
      */
-    const qint32 m_type;
+    qint32 m_type;
 
     /**
      * Whether we have a read report for this message
      */
-    const qint32 m_read;
+    qint32 m_read;
 
     /**
      * Tag which binds individual messages into a thread
      */
-    const qint32 m_threadID;
+    qint32 m_threadID;
 };
+
+Q_DECLARE_METATYPE(Message);
 
 #endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */

@@ -34,4 +34,50 @@ Message::Message(const QVariantMap& args, QObject* parent)
       {
 }
 
+Message::Message(const Message& other, QObject* parent)
+    : QObject(parent)
+    , m_body(other.m_body)
+    , m_address(other.m_address)
+    , m_date(other.m_date)
+    , m_type(other.m_type)
+    , m_read(other.m_read)
+    , m_threadID(other.m_threadID)
+{
+
+}
+
 Message::~Message() { }
+
+Message& Message::operator=(const Message& other)
+{
+    this->m_body = other.m_body;
+    this->m_address = other.m_address;
+    this->m_date = other.m_date;
+    this->m_type = other.m_type;
+    this->m_read = other.m_read;
+    this->m_threadID = other.m_threadID;
+    return *this;
+}
+
+QDBusArgument &operator<<(QDBusArgument &argument, const Message &message)
+{
+    argument.beginStructure();
+    argument << message.m_body << message.m_address << message.m_date << message.m_type
+            << message.m_read << message.m_threadID;
+    argument.endStructure();
+    return argument;
+}
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, Message &message)
+{
+    argument.beginStructure();
+    argument >> message.m_body >> message.m_address >> message.m_date >> message.m_type
+            >> message.m_read >> message.m_threadID;
+    argument.endStructure();
+    return argument;
+}
+
+void Message::registerDbusType()
+{
+    qDBusRegisterMetaType<Message>();
+}
