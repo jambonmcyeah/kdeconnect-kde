@@ -21,7 +21,7 @@
 #include "conversationmodel.h"
 #include <QLoggingCategory>
 
-Q_LOGGING_CATEGORY(KDECONNECT_SMS, "kdeconnect.sms")
+Q_LOGGING_CATEGORY(KDECONNECT_SMS_CONVERSATION_MODEL, "kdeconnect.sms.conversation")
 
 ConversationModel::ConversationModel(QObject* parent)
     : QStandardItemModel(parent)
@@ -39,13 +39,13 @@ ConversationModel::~ConversationModel()
 
 QString ConversationModel::threadId() const
 {
-    qCCritical(KDECONNECT_SMS) << "Hi";
+    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Hi";
     return {};
 }
 
 void ConversationModel::setThreadId(const QString &threadId)
 {
-    qCCritical(KDECONNECT_SMS) << "Setting threadId of" << this << "to" << threadId;
+    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Setting threadId of" << this << "to" << threadId;
     m_threadId = threadId;
     clear();
     appendRow(new QStandardItem(threadId + QStringLiteral(" - A")));
@@ -56,7 +56,7 @@ void ConversationModel::setThreadId(const QString &threadId)
 
 void ConversationModel::setDeviceId(const QString& deviceId)
 {
-    qCCritical(KDECONNECT_SMS) << "setDeviceId" << "of" << this;
+    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "setDeviceId" << "of" << this;
     if (m_conversationsInterface) delete m_conversationsInterface;
 
     m_deviceId = deviceId;
@@ -66,6 +66,6 @@ void ConversationModel::setDeviceId(const QString& deviceId)
 
 void ConversationModel::sendReplyToConversation(const QString& message)
 {
-    qCCritical(KDECONNECT_SMS) << "Should have sent " << message;
+    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Should have sent " << message;
     m_conversationsInterface->replyToConversation(m_threadId, message);
 }
