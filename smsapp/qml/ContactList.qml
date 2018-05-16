@@ -82,7 +82,7 @@ Kirigami.ScrollablePage
     }
     footer: ComboBox {
         id: devicesCombo
-        readonly property QtObject device: currentIndex>0 ? model.data(model.index(currentIndex, 0), DevicesModel.DeviceRole) : null
+        readonly property QtObject device: currentIndex>=0 ? model.data(model.index(currentIndex, 0), DevicesModel.DeviceRole) : null
         enabled: count > 0
         displayText: enabled ? undefined : i18n("No devices available")
         model: DevicesSortProxyModel {
