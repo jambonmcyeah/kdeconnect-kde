@@ -28,10 +28,10 @@ class Message: public QObject {
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
     Q_PROPERTY(QString body READ getBody)
     Q_PROPERTY(QString address READ getAddress)
-    Q_PROPERTY(QString date READ getDate)
-    Q_PROPERTY(QString type READ getType)
-    Q_PROPERTY(QString read READ getRead)
-    Q_PROPERTY(QString threadID READ getThreadID)
+    Q_PROPERTY(qint64 date READ getDate)
+    Q_PROPERTY(qint32 type READ getType)
+    Q_PROPERTY(qint32 read READ getRead)
+    Q_PROPERTY(qint32 threadID READ getThreadID)
 
 public:
     // TYPE field values from Android
@@ -58,10 +58,9 @@ public:
     QString getBody() const { return m_body; }
     QString getAddress() const { return m_address; }
     qint64 getDate() const { return m_date; }
-    QString getType() const { return m_type; }
-    QString getPerson() const { return m_person; }
+    qint32 getType() const { return m_type; }
     qint32 getRead() const { return m_read; }
-    QString getThreadID() const { return m_threadID; }
+    qint32 getThreadID() const { return m_threadID; }
 
 protected:
     /**
@@ -82,12 +81,7 @@ protected:
     /**
      * Type of the message. See the message.type enum
      */
-    const QString m_type;
-
-    /**
-     * Some way of connecting to the contact associated with the message
-     */
-    const QString m_person;
+    const qint32 m_type;
 
     /**
      * Whether we have a read report for this message
@@ -97,7 +91,7 @@ protected:
     /**
      * Tag which binds individual messages into a thread
      */
-    const QString m_threadID;
+    const qint32 m_threadID;
 };
 
 #endif /* PLUGINS_TELEPHONY_MESSAGE_H_ */
