@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 Albert Vaca <albertvaka@gmail.com>
+ * Copyright 2018 Simon Redman <simon@ergotech.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@
 
 #include "conversationsdbusinterface.h"
 #include "message.h"
+#include "interfaces/dbusinterfaces.h"
 
 #include <QDBusConnection>
 
@@ -27,20 +28,22 @@
 #include <core/kdeconnectplugin.h>
 
 #include "telephonyplugin.h"
-#include "sendreplydialog.h"
 
 ConversationsDbusInterface::ConversationsDbusInterface(KdeConnectPlugin* plugin)
     : QDBusAbstractAdaptor(const_cast<Device*>(plugin->device()))
     , m_device(plugin->device())
+    , m_telephonyInterface(m_device->id())
     , m_plugin(plugin)
     , m_lastId(0)
 {
-
+    // Prepare the list of conversations by requesting the first in every thread
+    m_telephonyInterface.requestAllConversations();
 }
 
 ConversationsDbusInterface::~ConversationsDbusInterface()
 {
     qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Destroying ConversationsDbusInterface";
+    // TODO: Clean up m_conversations's contained Message objects, otherwise massive memory leaks will occur!
 }
 
 QStringList ConversationsDbusInterface::activeConversations()
@@ -74,6 +77,15 @@ void ConversationsDbusInterface::removeMessage(const QString& internalID)
 void ConversationsDbusInterface::replyToConversation(const QString& conversationID, const QString& message)
 {
     // TODO: Use DBus to call sendSMS of the device's telephony plugin. In the future, support more cool things.
+    const QList<QPointer<Message>> messagesList = m_conversations[conversationID];
+    if (messagesList.isEmpty())
+    {
+        // Since there are no messages in the conversation, we can't do anything sensible
+        qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
+        return;
+    }
+    const QString& address = m_conversations[conversationID].front().data()->getAddress();
+    m_telephonyInterface.sendSms(address, message);
 }
 
 QString ConversationsDbusInterface::newId()

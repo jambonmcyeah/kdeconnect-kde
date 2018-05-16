@@ -29,6 +29,7 @@
 #include <QDir>
 #include <QPointer>
 
+#include "interfaces/dbusinterfaces.h"
 #include "message.h"
 
 class KdeConnectPlugin;
@@ -74,6 +75,8 @@ private /*attributes*/:
     QHash<QString, QList<QPointer<Message>>> m_conversations;
     QHash<QString, QString> m_internalIdToPublicId;
     int m_lastId;
+
+    TelephonyDbusInterface m_telephonyInterface;
 };
 
 #endif // CONVERSATIONSDBUSINTERFACE_H

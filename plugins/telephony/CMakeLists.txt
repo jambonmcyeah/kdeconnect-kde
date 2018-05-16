@@ -12,6 +12,7 @@ kdeconnect_add_plugin(kdeconnect_telephony JSON kdeconnect_telephony.json SOURCE
 
 target_link_libraries(kdeconnect_telephony
     kdeconnectcore
+    kdeconnectinterfaces
     KF5::I18n
     KF5::Notifications
     Qt5::DBus
