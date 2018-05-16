@@ -32,12 +32,11 @@
 ConversationsDbusInterface::ConversationsDbusInterface(KdeConnectPlugin* plugin)
     : QDBusAbstractAdaptor(const_cast<Device*>(plugin->device()))
     , m_device(plugin->device())
-    , m_telephonyInterface(m_device->id())
     , m_plugin(plugin)
     , m_lastId(0)
+    , m_telephonyInterface(m_device->id())
 {
-    // Prepare the list of conversations by requesting the first in every thread
-    m_telephonyInterface.requestAllConversations();
+    Message::registerDbusType();
 }
 
 ConversationsDbusInterface::~ConversationsDbusInterface()
@@ -51,32 +50,48 @@ QStringList ConversationsDbusInterface::activeConversations()
     return m_conversations.keys();
 }
 
-void ConversationsDbusInterface::addMessage(Message* message)
+Message ConversationsDbusInterface::getFirstFromConversation(const QString& conversationId)
 {
-    const QString& internalId = newId();
+    const QList<QPointer<Message>> messagesList = m_conversations[conversationId];
 
-    if (m_internalIdToPublicId.contains(internalId)) {
-        removeMessage(internalId);
+    if (messagesList.isEmpty())
+    {
+        // Since there are no messages in the conversation, we can't do anything sensible
+        qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
+        return Message();
     }
 
-    //qCDebug(KDECONNECT_PLUGIN_NOTIFICATION) << "addNotification" << internalId;
-
-    const QString& publicId = newId();
-    m_conversations[QString::number(message->getThreadID())].append(message);
-    m_internalIdToPublicId[internalId] = publicId;
-
-    QDBusConnection::sessionBus().registerObject(m_device->dbusPath()+"/messages/"+publicId, message, QDBusConnection::ExportScriptableContents);
-    Q_EMIT messagePosted(publicId);
+    return *messagesList.first().data();
 }
 
-void ConversationsDbusInterface::removeMessage(const QString& internalID)
+void ConversationsDbusInterface::addMessage(Message* message)
+{
+    // Dump the Message on DBus. I am not convinced this is the right or even a sane way to handle messages.
+    const QString& publicId = newId();
+    QDBusConnection::sessionBus().registerObject(m_device->dbusPath()+"/messages/"+publicId, message, QDBusConnection::ExportScriptableContents);
+
+    // Store the Message in the list corresponding to its thread
+    const QString& threadId = QString::number(message->getThreadID());
+    bool newConversation = m_conversations.contains(threadId);
+    m_conversations[threadId].append(message);
+
+    // Tell the world about what just happened
+    if (newConversation)
+    {
+        Q_EMIT conversationCreated(threadId);
+    } else
+    {
+        Q_EMIT conversationUpdated(threadId);
+    }
+}
+
+void ConversationsDbusInterface::removeMessage(const QString& internalId)
 {
     // TODO: Delete the specified message from our internal structures
 }
 
 void ConversationsDbusInterface::replyToConversation(const QString& conversationID, const QString& message)
 {
-    // TODO: Use DBus to call sendSMS of the device's telephony plugin. In the future, support more cool things.
     const QList<QPointer<Message>> messagesList = m_conversations[conversationID];
     if (messagesList.isEmpty())
     {
@@ -86,6 +101,12 @@ void ConversationsDbusInterface::replyToConversation(const QString& conversation
     }
     const QString& address = m_conversations[conversationID].front().data()->getAddress();
     m_telephonyInterface.sendSms(address, message);
+}
+
+void ConversationsDbusInterface::requestAllConversationThreads()
+{
+    // Prepare the list of conversations by requesting the first in every thread
+    m_telephonyInterface.requestAllConversations();
 }
 
 QString ConversationsDbusInterface::newId()

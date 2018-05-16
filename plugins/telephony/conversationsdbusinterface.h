@@ -46,34 +46,46 @@ public:
     ~ConversationsDbusInterface() override;
 
     void addMessage(Message* message);
-    void removeMessage(const QString& internalID);
+    void removeMessage(const QString& internalId);
 
 public Q_SLOTS:
     /**
-     * Return a list of all currently-valid threadIDs
+     * Return a list of the threadID for all valid conversations
      */
     QStringList activeConversations();
+
+    /**
+     * Get the first message in the requested conversation
+     */
+    Message getFirstFromConversation(const QString& conversationId);
 
     /**
      * Send a new message to this conversation
      */
     void replyToConversation(const QString& conversationID, const QString& message);
 
+    /**
+     * Send the request to the Telephony plugin to update the list of conversation threads
+     */
+    void requestAllConversationThreads();
+
 Q_SIGNALS:
-    Q_SCRIPTABLE void messagePosted(const QString& publicId);
-    Q_SCRIPTABLE void messageRemoved(const QString& publicId);
-    Q_SCRIPTABLE void messageUpdated(const QString& publicId);
+    Q_SCRIPTABLE void conversationCreated(const QString& threadID);
+    Q_SCRIPTABLE void conversationRemoved(const QString& threadID);
+    Q_SCRIPTABLE void conversationUpdated(const QString& threadID);
 
 private /*methods*/:
-    void removeNotification(const QString& internalId);
     QString newId(); //Generates successive identifitiers to use as public ids
     void notificationReady();
 
 private /*attributes*/:
     const Device* m_device;
     KdeConnectPlugin* m_plugin;
+
+    /**
+     * Mapping of threadID to the list of messages which make up that thread
+     */
     QHash<QString, QList<QPointer<Message>>> m_conversations;
-    QHash<QString, QString> m_internalIdToPublicId;
     int m_lastId;
 
     TelephonyDbusInterface m_telephonyInterface;
