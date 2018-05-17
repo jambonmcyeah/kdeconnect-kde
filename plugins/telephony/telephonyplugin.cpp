@@ -49,7 +49,7 @@ KNotification* TelephonyPlugin::createNotification(const NetworkPacket& np)
     const QString phoneNumber = np.get<QString>(QStringLiteral("phoneNumber"), i18n("unknown number"));
     const QString contactName = np.get<QString>(QStringLiteral("contactName"), phoneNumber);
     const QByteArray phoneThumbnail = QByteArray::fromBase64(np.get<QByteArray>(QStringLiteral("phoneThumbnail"), ""));
-    const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),QLatin1String(""));
+    const QString messageBody = np.get<QString>(QStringLiteral("messageBody"),{});
 
     // In case telepathy can handle the message, don't do anything else
     if (event == QLatin1String("sms") && m_telepathyInterface.isValid()) {
