@@ -81,4 +81,5 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, ConversationMessa
 void ConversationMessage::registerDbusType()
 {
     qDBusRegisterMetaType<ConversationMessage>();
+    qRegisterMetaType<ConversationMessage>();
 }
