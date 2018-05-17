@@ -36,7 +36,6 @@
 #include "interfaces/remotecommandsinterface.h"
 #include "interfaces/remotekeyboardinterface.h"
 #include "interfaces/telephonyinterface.h"
-#include "interfaces/messageinterface.h"
 #include "interfaces/conversationsinterface.h"
 
 /**
