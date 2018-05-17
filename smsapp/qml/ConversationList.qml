@@ -86,13 +86,12 @@ Kirigami.ScrollablePage
                 personUri: model.personUri
             }
 
-            readonly property var conversationId: model.conversationId
             label: display
             icon: decoration
             function startChat() {
                 applicationWindow().pageStack.push(chatView, {
                                                        person: person.person,
-                                                       conversationId: conversationId,
+                                                       conversationId: model.conversationId,
                                                        device: device})
             }
             onClicked: { startChat(); }
