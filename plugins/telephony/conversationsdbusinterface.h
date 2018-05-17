@@ -29,7 +29,7 @@
 #include <QDir>
 #include <QPointer>
 
-#include "conversationmessage.h"
+#include "interfaces/conversationmessage.h"
 #include "interfaces/dbusinterfaces.h"
 
 class KdeConnectPlugin;

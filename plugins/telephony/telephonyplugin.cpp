@@ -23,6 +23,7 @@
 
 #include "sendreplydialog.h"
 #include "conversationsdbusinterface.h"
+#include "interfaces/conversationmessage.h"
 
 #include <KLocalizedString>
 #include <QDebug>
@@ -30,7 +31,6 @@
 
 #include <KPluginFactory>
 #include <KNotification>
-#include "conversationmessage.h"
 
 K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_telephony.json", registerPlugin< TelephonyPlugin >(); )
 

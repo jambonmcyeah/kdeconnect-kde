@@ -20,12 +20,12 @@
 
 #include "conversationsdbusinterface.h"
 #include "interfaces/dbusinterfaces.h"
+#include "interfaces/conversationmessage.h"
 
 #include <QDBusConnection>
 
 #include <core/device.h>
 #include <core/kdeconnectplugin.h>
-#include "conversationmessage.h"
 
 #include "telephonyplugin.h"
 
