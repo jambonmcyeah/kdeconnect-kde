@@ -39,8 +39,17 @@ Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_TELEPHONY, "kdeconnect.plugin.telephony")
 TelephonyPlugin::TelephonyPlugin(QObject* parent, const QVariantList& args)
     : KdeConnectPlugin(parent, args)
     , m_telepathyInterface(QStringLiteral("org.freedesktop.Telepathy.ConnectionManager.kdeconnect"), QStringLiteral("/kdeconnect"))
-    , m_conversationInterface(this)
+    , m_conversationInterface(new ConversationsDbusInterface(this))
 {
+}
+
+TelephonyPlugin::~TelephonyPlugin()
+{
+    // FIXME: Same problem as discussed in the BatteryPlugin destructor and for the same reason:
+    // QtDbus does not allow us to delete m_conversationInterface. If we do so, we get a crash in the
+    // next DBus access to the parent
+
+    //m_conversationInterface->deleteLater();
 }
 
 KNotification* TelephonyPlugin::createNotification(const NetworkPacket& np)
@@ -209,7 +218,7 @@ bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
     {
         ConversationMessage* message = new ConversationMessage(body.toMap());
         forwardToTelepathy(*message);
-        m_conversationInterface.addMessage(message);
+        m_conversationInterface->addMessage(message);
     }
 
     return true;

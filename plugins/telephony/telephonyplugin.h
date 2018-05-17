@@ -87,6 +87,7 @@ class TelephonyPlugin
 
 public:
     explicit TelephonyPlugin(QObject* parent, const QVariantList& args);
+    ~TelephonyPlugin() override;
 
     bool receivePacket(const NetworkPacket& np) override;
     void connected() override {}
@@ -130,7 +131,7 @@ private:
     KNotification* createNotification(const NetworkPacket& np);
 
     QDBusInterface m_telepathyInterface;
-    ConversationsDbusInterface m_conversationInterface;
+    ConversationsDbusInterface* m_conversationInterface;
 };
 
 #endif
