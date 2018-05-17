@@ -42,7 +42,13 @@ ConversationsDbusInterface::ConversationsDbusInterface(KdeConnectPlugin* plugin)
 ConversationsDbusInterface::~ConversationsDbusInterface()
 {
     qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Destroying ConversationsDbusInterface";
-    // TODO: Clean up m_conversations's contained Message objects, otherwise massive memory leaks will occur!
+    for (const auto& conversation_list : m_conversations)
+    {
+        for (const QPointer<ConversationMessage>& message : conversation_list)
+        {
+            delete message.data();
+        }
+    }
 }
 
 QStringList ConversationsDbusInterface::activeConversations()
