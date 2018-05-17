@@ -23,6 +23,8 @@
 
 #include <QStandardItemModel>
 #include <QLoggingCategory>
+#include <KPeople/kpeople/personsmodel.h>
+#include <KPeople/kpeople/persondata.h>
 
 #include "interfaces/conversationmessage.h"
 #include "interfaces/dbusinterfaces.h"
@@ -57,8 +59,14 @@ private:
      */
     void prepareConversationsList();
 
+    /**
+     * Get the data for a particular person given their contact address
+     */
+    KPeople::PersonData* lookupPersonByAddress(const QString& address);
+
     DeviceConversationsDbusInterface* m_conversationsInterface;
     QString m_deviceId;
+    KPeople::PersonsModel m_people;
 };
 
 #endif // CONVERSATIONLISTMODEL_H

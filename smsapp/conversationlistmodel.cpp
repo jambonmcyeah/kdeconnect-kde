@@ -89,5 +89,55 @@ void ConversationListModel::printDBusError(const QDBusError& error)
 
 void ConversationListModel::createRowFromMessage(const ConversationMessage& message)
 {
-    appendRow(new QStandardItem(message.getBody()));
+    if (message.getType() == -1)
+    {
+        // The Android side currently hacks in -1 if something weird comes up
+        // TODO: Remove this hack when MMS support is implemented
+        return;
+    }
+
+    QStandardItem* item = new QStandardItem();
+
+    KPeople::PersonData* persondata = lookupPersonByAddress(message.getAddress());
+    if (persondata)
+    {
+        item->setText(persondata->name());
+        item->setIcon(QIcon(persondata->photo()));
+    }
+    else
+    {
+        item->setText(message.getAddress());
+    }
+
+    QVariant data;
+    data.setValue(message);
+
+    item->setData(data);
+
+    appendRow(item);
+    delete persondata;
+}
+
+KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString& address)
+{
+    int rowIndex = 0;
+    for (rowIndex = 0; rowIndex < m_people.rowCount(); rowIndex++)
+    {
+        const QModelIndex& index = m_people.index(rowIndex);
+        const QString& uri = m_people.get(rowIndex, KPeople::PersonsModel::PersonUriRole).toString();
+        KPeople::PersonData* person = new KPeople::PersonData(uri);
+
+        const QString& email = person->email();
+        const QString& phoneNumber = person->contactCustomProperty("phoneNumber").toString();
+
+        if (address == email || address == phoneNumber)
+        {
+            qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Matched" << address << "to" << person->name();
+            return person;
+        }
+
+        delete person;
+    }
+
+    return nullptr;
 }
