@@ -32,24 +32,24 @@ class KDECONNECTINTERFACES_EXPORT ConversationMessage
     : public QObject {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
-    Q_PROPERTY(QString body READ getBody)
-    Q_PROPERTY(QString address READ getAddress)
-    Q_PROPERTY(qint64 date READ getDate)
-    Q_PROPERTY(qint32 type READ getType)
-    Q_PROPERTY(qint32 read READ getRead)
-    Q_PROPERTY(qint32 threadID READ getThreadID)
+    Q_PROPERTY(QString body READ body)
+    Q_PROPERTY(QString address READ address)
+    Q_PROPERTY(qint64 date READ date)
+    Q_PROPERTY(qint32 type READ type)
+    Q_PROPERTY(qint32 read READ read)
+    Q_PROPERTY(qint32 threadID READ threadID)
 
 public:
     // TYPE field values from Android
     enum Types
     {
-        messageTypeAll = 0,
-        messageTypeInbox = 1,
-        messageTypeSent = 2,
-        messageTypeDraft = 3,
-        messageTypeOutbox = 4,
-        messageTypeFailed = 5,
-        messageTypeQueued = 6,
+        MessageTypeAll = 0,
+        MessageTypeInbox = 1,
+        MessageTypeSent = 2,
+        MessageTypeDraft = 3,
+        MessageTypeOutbox = 4,
+        MessageTypeFailed = 5,
+        MessageTypeQueued = 6,
     };
     Q_ENUM(Types);
 
@@ -64,12 +64,12 @@ public:
     ConversationMessage& operator=(const ConversationMessage& other);
     static void registerDbusType();
 
-    QString getBody() const { return m_body; }
-    QString getAddress() const { return m_address; }
-    qint64 getDate() const { return m_date; }
-    qint32 getType() const { return m_type; }
-    qint32 getRead() const { return m_read; }
-    qint32 getThreadID() const { return m_threadID; }
+    QString body() const { return m_body; }
+    QString address() const { return m_address; }
+    qint64 date() const { return m_date; }
+    qint32 type() const { return m_type; }
+    qint32 read() const { return m_read; }
+    qint32 threadID() const { return m_threadID; }
 
 public:
     /**

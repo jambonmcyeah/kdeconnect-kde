@@ -71,7 +71,7 @@ void ConversationsDbusInterface::addMessage(ConversationMessage* message)
     QDBusConnection::sessionBus().registerObject(m_device->dbusPath()+"/messages/"+publicId, message, QDBusConnection::ExportScriptableContents);
 
     // Store the Message in the list corresponding to its thread
-    const QString& threadId = QString::number(message->getThreadID());
+    const QString& threadId = QString::number(message->threadID());
     bool newConversation = m_conversations.contains(threadId);
     m_conversations[threadId].append(message);
 
@@ -99,7 +99,7 @@ void ConversationsDbusInterface::replyToConversation(const QString& conversation
         qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
         return;
     }
-    const QString& address = m_conversations[conversationID].front().data()->getAddress();
+    const QString& address = m_conversations[conversationID].front().data()->address();
     m_telephonyInterface.sendSms(address, message);
 }
 

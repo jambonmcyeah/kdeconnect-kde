@@ -92,7 +92,7 @@ void ConversationListModel::printDBusError(const QDBusError& error)
 
 void ConversationListModel::createRowFromMessage(const ConversationMessage& message)
 {
-    if (message.getType() == -1)
+    if (message.type() == -1)
     {
         // The Android side currently hacks in -1 if something weird comes up
         // TODO: Remove this hack when MMS support is implemented
@@ -101,7 +101,7 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
 
     QStandardItem* item = new QStandardItem();
 
-    KPeople::PersonData* personData = lookupPersonByAddress(message.getAddress());
+    KPeople::PersonData* personData = lookupPersonByAddress(message.address());
     if (personData)
     {
         item->setText(personData->name());
@@ -110,12 +110,12 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
     }
     else
     {
-        item->setText(message.getAddress());
+        item->setText(message.address());
     }
 
-    item->setData(message.getThreadID(), ConversationIdRole);
-    item->setData(message.getType() == ConversationMessage::messageTypeSent, FromMeRole);
-    item->setData(message.getDate(), DateRole);
+    item->setData(message.threadID(), ConversationIdRole);
+    item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);
+    item->setData(message.date(), DateRole);
 
     appendRow(item);
     delete personData;
