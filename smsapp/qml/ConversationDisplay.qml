@@ -31,7 +31,6 @@ Kirigami.ScrollablePage
     property QtObject device
 
     readonly property string phoneNumber: person.contactCustomProperty("phoneNumber")
-    readonly property QtObject telephony: device ? TelephonyDbusInterfaceFactory.create(device.id()) : null
     title: i18n("%1: %2", person.name, phoneNumber)
 
     ListView {
@@ -56,7 +55,7 @@ Kirigami.ScrollablePage
             placeholderText: i18n("Say hi...")
             onAccepted: {
                 console.log("sending sms", page.phoneNumber)
-                page.telephony.sendSms(page.phoneNumber, message.text)
+                model.sendReplyToConversation(message.text)
             }
         }
         Button {
