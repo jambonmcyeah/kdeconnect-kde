@@ -18,6 +18,7 @@ set(libkdeconnect_SRC
     notificationsmodel.cpp
     devicessortproxymodel.cpp
     conversationmodel.cpp
+    conversationlistmodel.cpp
     conversationmessage.cpp
 #    modeltest.cpp
 )
@@ -31,6 +32,7 @@ set(libkdeconnect_HEADERS
     devicesmodel.h
     notificationsmodel.h
     conversationmodel.h
+    conversationlistmodel.h
     conversationmessage.h
     dbusinterfaces.h
     ${CMAKE_CURRENT_BINARY_DIR}/kdeconnectinterfaces_export.h
