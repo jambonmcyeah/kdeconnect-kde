@@ -35,6 +35,20 @@ ConversationMessage::ConversationMessage(const QVariantMap& args, QObject* paren
       {
 }
 
+ConversationMessage::ConversationMessage (const QString& body, const QString& address, const qint64& date,
+                                          const qint32& type, const qint32& read, const qint32& threadID,
+                                          QObject* parent)
+    : QObject(parent)
+    , m_body(body)
+    , m_address(address)
+    , m_date(date)
+    , m_type(type)
+    , m_read(read)
+    , m_threadID(threadID)
+{
+
+}
+
 ConversationMessage::ConversationMessage(const ConversationMessage& other, QObject* parent)
     : QObject(parent)
     , m_body(other.m_body)
@@ -63,18 +77,32 @@ ConversationMessage& ConversationMessage::operator=(const ConversationMessage& o
 QDBusArgument &operator<<(QDBusArgument &argument, const ConversationMessage &message)
 {
     argument.beginStructure();
-    argument << message.m_body << message.m_address << message.m_date << message.m_type
-            << message.m_read << message.m_threadID;
+    argument << message.body() << message.address() << message.date() << message.type()
+            << message.read() << message.threadID();
     argument.endStructure();
     return argument;
 }
 
 const QDBusArgument &operator>>(const QDBusArgument &argument, ConversationMessage &message)
 {
+    QString body;
+    QString address;
+    qint64 date;
+    qint32 type;
+    qint32 read;
+    qint32 threadID;
+
     argument.beginStructure();
-    argument >> message.m_body >> message.m_address >> message.m_date >> message.m_type
-            >> message.m_read >> message.m_threadID;
+    argument >> body;
+    argument >> address;
+    argument >> date;
+    argument >> type;
+    argument >> read;
+    argument >> threadID;
     argument.endStructure();
+
+    message = ConversationMessage(body, address, date, type, read, threadID);
+
     return argument;
 }
 

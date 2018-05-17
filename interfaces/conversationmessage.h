@@ -54,11 +54,16 @@ public:
     Q_ENUM(Types);
 
     /**
-     * Build a new message
+     * Build a new message from a keyword argument dictionary
      *
      * @param args mapping of field names to values as might be contained in a network packet containing a message
      */
     ConversationMessage(const QVariantMap& args = QVariantMap(), QObject* parent = Q_NULLPTR);
+
+    ConversationMessage(const QString& body, const QString& address, const qint64& date,
+                        const qint32& type, const qint32& read, const qint32& threadID,
+                        QObject* parent = Q_NULLPTR);
+
     ConversationMessage(const ConversationMessage& other, QObject* parent = Q_NULLPTR);
     ~ConversationMessage();
     ConversationMessage& operator=(const ConversationMessage& other);
@@ -71,7 +76,7 @@ public:
     qint32 read() const { return m_read; }
     qint32 threadID() const { return m_threadID; }
 
-public:
+protected:
     /**
      * Body of the message
      */
