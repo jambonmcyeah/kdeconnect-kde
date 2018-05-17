@@ -32,6 +32,8 @@ ConversationListModel::ConversationListModel(QObject* parent)
     qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Constructing" << this;
     auto roles = roleNames();
     roles.insert(FromMeRole, "fromMe");
+    roles.insert(PersonUriRole, "personUri");
+    roles.insert(ConversationIdRole, "conversationId");
     setItemRoleNames(roles);
 
     ConversationMessage::registerDbusType();
@@ -98,24 +100,23 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
 
     QStandardItem* item = new QStandardItem();
 
-    KPeople::PersonData* persondata = lookupPersonByAddress(message.getAddress());
-    if (persondata)
+    KPeople::PersonData* personData = lookupPersonByAddress(message.getAddress());
+    if (personData)
     {
-        item->setText(persondata->name());
-        item->setIcon(QIcon(persondata->photo()));
+        item->setText(personData->name());
+        item->setIcon(QIcon(personData->photo()));
+        item->setData(personData->personUri(), PersonUriRole);
     }
     else
     {
         item->setText(message.getAddress());
     }
 
-    QVariant data;
-    data.setValue(message);
-
-    item->setData(data);
+    item->setData(message.getThreadID(), ConversationIdRole);
+    item->setData(message.getType() == ConversationMessage::messageTypeSent, FromMeRole);
 
     appendRow(item);
-    delete persondata;
+    delete personData;
 }
 
 KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString& address)

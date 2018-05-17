@@ -43,7 +43,11 @@ public:
     ConversationListModel(QObject* parent = nullptr);
     ~ConversationListModel();
 
-    enum Roles { FromMeRole = Qt::UserRole };
+    enum Roles {
+        FromMeRole = Qt::UserRole,
+        PersonUriRole,
+        ConversationIdRole,
+    };
 
     QString deviceId() const { return m_deviceId; }
     void setDeviceId(const QString &/*deviceId*/);

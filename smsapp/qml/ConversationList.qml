@@ -83,13 +83,17 @@ Kirigami.ScrollablePage
             hoverEnabled: true
 
             readonly property var person: PersonData {
-                personUri: ""
+                personUri: model.personUri
             }
 
+            readonly property var conversationId: model.conversationId
             label: display
             icon: decoration
             function startChat() {
-                applicationWindow().pageStack.push(chatView, { person: person.person, device: Qt.binding(function() {return devicesCombo.device })})
+                applicationWindow().pageStack.push(chatView, {
+                                                       person: person.person,
+                                                       conversationId: conversationId,
+                                                       device: device})
             }
             onClicked: { startChat(); }
         }
