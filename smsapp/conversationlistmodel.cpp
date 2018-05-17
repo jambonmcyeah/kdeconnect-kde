@@ -132,7 +132,7 @@ KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString&
 
         if (address == email || canonicalizePhoneNumber(address) == phoneNumber)
         {
-            qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Matched" << address << "to" << person->name();
+            qCDebug(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Matched" << address << "to" << person->name();
             return person;
         }
 
