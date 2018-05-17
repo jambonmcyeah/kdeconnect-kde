@@ -34,6 +34,7 @@ ConversationListModel::ConversationListModel(QObject* parent)
     roles.insert(FromMeRole, "fromMe");
     roles.insert(PersonUriRole, "personUri");
     roles.insert(ConversationIdRole, "conversationId");
+    roles.insert(DateRole, "date");
     setItemRoleNames(roles);
 
     ConversationMessage::registerDbusType();
@@ -114,6 +115,7 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
 
     item->setData(message.getThreadID(), ConversationIdRole);
     item->setData(message.getType() == ConversationMessage::messageTypeSent, FromMeRole);
+    item->setData(message.getDate(), DateRole);
 
     appendRow(item);
     delete personData;

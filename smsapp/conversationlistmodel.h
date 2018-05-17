@@ -47,6 +47,7 @@ public:
         FromMeRole = Qt::UserRole,
         PersonUriRole,
         ConversationIdRole,
+        DateRole,
     };
 
     QString deviceId() const { return m_deviceId; }
