@@ -64,6 +64,11 @@ private:
      */
     KPeople::PersonData* lookupPersonByAddress(const QString& address);
 
+    /**
+     * Simplify a phone number to a known form
+     */
+    QString canonicalizePhoneNumber(const QString& phoneNumber);
+
     DeviceConversationsDbusInterface* m_conversationsInterface;
     QString m_deviceId;
     KPeople::PersonsModel m_people;

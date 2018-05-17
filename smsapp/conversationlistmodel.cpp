@@ -123,14 +123,13 @@ KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString&
     int rowIndex = 0;
     for (rowIndex = 0; rowIndex < m_people.rowCount(); rowIndex++)
     {
-        const QModelIndex& index = m_people.index(rowIndex);
         const QString& uri = m_people.get(rowIndex, KPeople::PersonsModel::PersonUriRole).toString();
         KPeople::PersonData* person = new KPeople::PersonData(uri);
 
         const QString& email = person->email();
-        const QString& phoneNumber = person->contactCustomProperty("phoneNumber").toString();
+        const QString& phoneNumber = canonicalizePhoneNumber(person->contactCustomProperty("phoneNumber").toString());
 
-        if (address == email || address == phoneNumber)
+        if (address == email || canonicalizePhoneNumber(address) == phoneNumber)
         {
             qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Matched" << address << "to" << person->name();
             return person;
@@ -140,4 +139,15 @@ KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString&
     }
 
     return nullptr;
+}
+
+QString ConversationListModel::canonicalizePhoneNumber(const QString& phoneNumber)
+{
+    QString toReturn(phoneNumber);
+    toReturn = toReturn.remove(' ');
+    toReturn = toReturn.remove('-');
+    toReturn = toReturn.remove('(');
+    toReturn = toReturn.remove(')');
+    toReturn = toReturn.remove('+');
+    return toReturn;
 }
