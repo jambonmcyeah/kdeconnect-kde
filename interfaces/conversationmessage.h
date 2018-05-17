@@ -26,7 +26,10 @@
 #include <QDBusArgument>
 #include <QVariantMap>
 
-class ConversationMessage: public QObject {
+#include "interfaces/kdeconnectinterfaces_export.h"
+
+class KDECONNECTINTERFACES_EXPORT ConversationMessage
+    : public QObject {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.kde.kdeconnect.device.telephony.messages")
     Q_PROPERTY(QString body READ getBody)
