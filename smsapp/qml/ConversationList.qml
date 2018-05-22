@@ -56,7 +56,7 @@ Kirigami.ScrollablePage
         currentIndex: 0
 
         model: ConversationListModel {
-            deviceId: device.id()
+            deviceId: device ? device.id() : ""
         }
 
         header: TextField {

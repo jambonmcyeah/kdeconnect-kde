@@ -42,21 +42,22 @@ ConversationListModel::ConversationListModel(QObject* parent)
 
 ConversationListModel::~ConversationListModel()
 {
-    if (m_conversationsInterface) delete m_conversationsInterface;
 }
 
 void ConversationListModel::setDeviceId(const QString& deviceId)
 {
-    qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "setDeviceId" << "of" << this;
-    if (m_conversationsInterface) delete m_conversationsInterface;
+    qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "setDeviceId" << deviceId << "of" << this;
+    if (deviceId == m_deviceId)
+        return;
+
+    if (m_conversationsInterface) {
+        disconnect(m_conversationsInterface, SIGNAL(conversationCreated(QString)), this, SLOT(handleCreatedConversation(QString)));
+        delete m_conversationsInterface;
+    }
 
     m_deviceId = deviceId;
-
-    m_conversationsInterface = new DeviceConversationsDbusInterface(deviceId);
-
-    connect(m_conversationsInterface, SIGNAL(conversationCreated(const QString&)),
-            this, SLOT(handleCreatedConversation(const QString&)), Qt::UniqueConnection);
-
+    m_conversationsInterface = new DeviceConversationsDbusInterface(deviceId, this);
+    connect(m_conversationsInterface, SIGNAL(conversationCreated(QString)), this, SLOT(handleCreatedConversation(QString)));
     prepareConversationsList();
 
     m_conversationsInterface->requestAllConversationThreads();
