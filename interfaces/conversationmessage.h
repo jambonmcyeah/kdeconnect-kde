@@ -76,6 +76,8 @@ public:
     qint32 read() const { return m_read; }
     qint32 threadID() const { return m_threadID; }
 
+    QVariantMap toVariant() const;
+
 protected:
     /**
      * Body of the message

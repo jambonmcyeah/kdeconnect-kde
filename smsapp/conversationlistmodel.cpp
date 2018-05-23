@@ -59,6 +59,7 @@ void ConversationListModel::setDeviceId(const QString& deviceId)
     m_deviceId = deviceId;
     m_conversationsInterface = new DeviceConversationsDbusInterface(deviceId, this);
     connect(m_conversationsInterface, SIGNAL(conversationCreated(QString)), this, SLOT(handleCreatedConversation(QString)));
+    connect(m_conversationsInterface, SIGNAL(conversationMessageReceived(QVariantMap, int)), this, SLOT(createRowFromMessage(QVariantMap, int)));
     prepareConversationsList();
 
     m_conversationsInterface->requestAllConversationThreads();
@@ -66,25 +67,20 @@ void ConversationListModel::setDeviceId(const QString& deviceId)
 
 void ConversationListModel::prepareConversationsList()
 {
-    clear();
 
     QDBusPendingReply<QStringList> validThreadIDsReply = m_conversationsInterface->activeConversations();
-    validThreadIDsReply.waitForFinished();
 
-    for (const QString& conversationId : validThreadIDsReply.value())
-    {
-        handleCreatedConversation(conversationId);
-    }
-
+    setWhenAvailable(validThreadIDsReply, [this](const QStringList& convs) {
+        clear();
+        for (const QString& conversationId : convs) {
+            handleCreatedConversation(conversationId);
+        }
+    }, this);
 }
 
 void ConversationListModel::handleCreatedConversation(const QString& conversationId)
 {
-    QVariantList args;
-    args.append(conversationId);
-
-    m_conversationsInterface->callWithCallback("getFirstFromConversation", args,
-                                               this, SLOT(createRowFromMessage(ConversationMessage)), SLOT(printDBusError(QDBusError)));
+    m_conversationsInterface->requestConversation(conversationId, 0, 1);
 }
 
 void ConversationListModel::printDBusError(const QDBusError& error)
@@ -92,8 +88,12 @@ void ConversationListModel::printDBusError(const QDBusError& error)
     qCWarning(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << error;
 }
 
-void ConversationListModel::createRowFromMessage(const ConversationMessage& message)
+void ConversationListModel::createRowFromMessage(const QVariantMap& msg, int row)
 {
+    if (row != 0)
+        return;
+
+    const ConversationMessage message(msg);
     if (message.type() == -1)
     {
         // The Android side currently hacks in -1 if something weird comes up
@@ -103,7 +103,7 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
 
     QStandardItem* item = new QStandardItem();
 
-    KPeople::PersonData* personData = lookupPersonByAddress(message.address());
+    QScopedPointer<KPeople::PersonData> personData(lookupPersonByAddress(message.address()));
     if (personData)
     {
         item->setText(personData->name());
@@ -116,13 +116,12 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
         item->setText(message.address());
     }
     item->setData(message.address(), AddressRole);
-
+    item->setData(message.body(), Qt::ToolTipRole);
     item->setData(message.threadID(), ConversationIdRole);
     item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);
     item->setData(message.date(), DateRole);
 
     appendRow(item);
-    delete personData;
 }
 
 KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString& address)

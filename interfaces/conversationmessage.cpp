@@ -74,6 +74,18 @@ ConversationMessage& ConversationMessage::operator=(const ConversationMessage& o
     return *this;
 }
 
+QVariantMap ConversationMessage::toVariant() const
+{
+    return {
+        {"body", m_body},
+        {"address", m_address},
+        {"date", m_date},
+        {"type", m_type},
+        {"read", m_read},
+        {"thread_id", m_threadID}
+    };
+}
+
 QDBusArgument &operator<<(QDBusArgument &argument, const ConversationMessage &message)
 {
     argument.beginStructure();

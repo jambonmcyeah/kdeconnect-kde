@@ -29,7 +29,7 @@ Kirigami.ScrollablePage
     id: page
     property QtObject person
     property QtObject device
-    property QtObject conversationId
+    property string conversationId
 
     property string phoneNumber
     title: person ? i18n("%1: %2", person.name, phoneNumber) : phoneNumber
@@ -38,7 +38,7 @@ Kirigami.ScrollablePage
         model: ConversationModel {
             id: model
             deviceId: device.id()
-            threadId: conversationId
+            threadId: page.conversationId
         }
 
         delegate: Kirigami.BasicListItem {

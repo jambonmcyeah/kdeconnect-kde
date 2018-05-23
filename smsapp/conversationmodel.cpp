@@ -20,6 +20,7 @@
 
 #include "conversationmodel.h"
 #include <QLoggingCategory>
+#include "conversationmessage.h"
 
 Q_LOGGING_CATEGORY(KDECONNECT_SMS_CONVERSATION_MODEL, "kdeconnect.sms.conversation")
 
@@ -34,7 +35,6 @@ ConversationModel::ConversationModel(QObject* parent)
 
 ConversationModel::~ConversationModel()
 {
-    if (m_conversationsInterface) delete m_conversationsInterface;
 }
 
 QString ConversationModel::threadId() const
@@ -45,27 +45,40 @@ QString ConversationModel::threadId() const
 
 void ConversationModel::setThreadId(const QString &threadId)
 {
-    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Setting threadId of" << this << "to" << threadId;
+    if (m_threadId == threadId)
+        return;
+
     m_threadId = threadId;
     clear();
-    appendRow(new QStandardItem(threadId + QStringLiteral(" - A")));
-    appendRow(new QStandardItem(threadId + QStringLiteral(" - A1")));
-    appendRow(new QStandardItem(threadId + QStringLiteral(" - A2")));
-    appendRow(new QStandardItem(threadId + QStringLiteral(" - A3")));
+    if (!threadId.isEmpty()) {
+        m_conversationsInterface->requestConversation(threadId, 0, 10);
+    }
 }
 
 void ConversationModel::setDeviceId(const QString& deviceId)
 {
+    if (deviceId == m_deviceId)
+        return;
+
     qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "setDeviceId" << "of" << this;
     if (m_conversationsInterface) delete m_conversationsInterface;
 
     m_deviceId = deviceId;
 
-    m_conversationsInterface = new DeviceConversationsDbusInterface(deviceId);
+    m_conversationsInterface = new DeviceConversationsDbusInterface(deviceId, this);
+    connect(m_conversationsInterface, SIGNAL(conversationMessageReceived(QVariantMap, int)), this, SLOT(createRowFromMessage(QVariantMap, int)));
 }
 
 void ConversationModel::sendReplyToConversation(const QString& message)
 {
     qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Should have sent " << message;
     m_conversationsInterface->replyToConversation(m_threadId, message);
+}
+
+void ConversationModel::createRowFromMessage(const QVariantMap& msg, int pos)
+{
+    const ConversationMessage message(msg);
+    auto item = new QStandardItem;
+    item->setText(message.body());
+    insertRow(pos, item);
 }

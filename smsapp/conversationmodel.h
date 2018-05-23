@@ -51,6 +51,9 @@ public:
 
     Q_INVOKABLE void sendReplyToConversation(const QString& message);
 
+private Q_SLOTS:
+    void createRowFromMessage(const QVariantMap &msg, int pos);
+
 private:
     DeviceConversationsDbusInterface* m_conversationsInterface;
     QString m_deviceId;

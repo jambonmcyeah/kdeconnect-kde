@@ -56,7 +56,7 @@ public:
 
 public Q_SLOTS:
     void handleCreatedConversation(const QString& conversationId);
-    void createRowFromMessage(const ConversationMessage& message);
+    void createRowFromMessage(const QVariantMap& message, int row);
     void printDBusError(const QDBusError& error);
 
 private:

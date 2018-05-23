@@ -216,8 +216,8 @@ bool TelephonyPlugin::handleBatchMessages(const NetworkPacket& np)
 
     for (const QVariant& body : messages)
     {
-        ConversationMessage* message = new ConversationMessage(body.toMap());
-        forwardToTelepathy(*message);
+        ConversationMessage message(body.toMap());
+        forwardToTelepathy(message);
         m_conversationInterface->addMessage(message);
     }
 

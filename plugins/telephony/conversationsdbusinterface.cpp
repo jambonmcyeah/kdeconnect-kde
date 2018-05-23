@@ -41,14 +41,6 @@ ConversationsDbusInterface::ConversationsDbusInterface(KdeConnectPlugin* plugin)
 
 ConversationsDbusInterface::~ConversationsDbusInterface()
 {
-    qCDebug(KDECONNECT_PLUGIN_TELEPHONY) << "Destroying ConversationsDbusInterface";
-    for (const auto& conversation_list : m_conversations)
-    {
-        for (const QPointer<ConversationMessage>& message : conversation_list)
-        {
-            delete message.data();
-        }
-    }
 }
 
 QStringList ConversationsDbusInterface::activeConversations()
@@ -56,28 +48,29 @@ QStringList ConversationsDbusInterface::activeConversations()
     return m_conversations.keys();
 }
 
-ConversationMessage ConversationsDbusInterface::getFirstFromConversation(const QString& conversationId)
+void ConversationsDbusInterface::requestConversation(const QString& conversationID, int start, int end) const
 {
-    const QList<QPointer<ConversationMessage>> messagesList = m_conversations[conversationId];
+    const auto messagesList = m_conversations[conversationID];
 
     if (messagesList.isEmpty())
     {
         // Since there are no messages in the conversation, we can't do anything sensible
-        qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
-        return ConversationMessage();
+        qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!" << conversationID;
+        return;
     }
 
-    return *messagesList.first().data();
+    for(int i=start; i<end; ++i) {
+        if (i<messagesList.size()) {
+            Q_EMIT conversationMessageReceived(messagesList.at(i).toVariant(), i);
+        } else
+            Q_EMIT conversationMessageReceived({}, i);
+    }
 }
 
-void ConversationsDbusInterface::addMessage(ConversationMessage* message)
+void ConversationsDbusInterface::addMessage(const ConversationMessage &message)
 {
-    // Dump the Message on DBus. I am not convinced this is the right or even a sane way to handle messages.
-    const QString& publicId = newId();
-    QDBusConnection::sessionBus().registerObject(m_device->dbusPath()+"/messages/"+publicId, message, QDBusConnection::ExportScriptableContents);
-
     // Store the Message in the list corresponding to its thread
-    const QString& threadId = QString::number(message->threadID());
+    const QString& threadId = QString::number(message.threadID());
     bool newConversation = m_conversations.contains(threadId);
     m_conversations[threadId].append(message);
 
@@ -98,14 +91,14 @@ void ConversationsDbusInterface::removeMessage(const QString& internalId)
 
 void ConversationsDbusInterface::replyToConversation(const QString& conversationID, const QString& message)
 {
-    const QList<QPointer<ConversationMessage>> messagesList = m_conversations[conversationID];
+    const auto messagesList = m_conversations[conversationID];
     if (messagesList.isEmpty())
     {
         // Since there are no messages in the conversation, we can't do anything sensible
         qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!";
         return;
     }
-    const QString& address = m_conversations[conversationID].front().data()->address();
+    const QString& address = messagesList.front().address();
     m_telephonyInterface.sendSms(address, message);
 }
 

@@ -45,7 +45,7 @@ public:
     explicit ConversationsDbusInterface(KdeConnectPlugin* plugin);
     ~ConversationsDbusInterface() override;
 
-    void addMessage(ConversationMessage* message);
+    void addMessage(const ConversationMessage &message);
     void removeMessage(const QString& internalId);
 
 public Q_SLOTS:
@@ -54,10 +54,7 @@ public Q_SLOTS:
      */
     QStringList activeConversations();
 
-    /**
-     * Get the first message in the requested conversation
-     */
-    ConversationMessage getFirstFromConversation(const QString& conversationId);
+    void requestConversation(const QString &conversationID, int start, int end) const;
 
     /**
      * Send a new message to this conversation
@@ -73,10 +70,10 @@ Q_SIGNALS:
     Q_SCRIPTABLE void conversationCreated(const QString& threadID);
     Q_SCRIPTABLE void conversationRemoved(const QString& threadID);
     Q_SCRIPTABLE void conversationUpdated(const QString& threadID);
+    Q_SCRIPTABLE void conversationMessageReceived(const QVariantMap & msg, int pos) const;
 
 private /*methods*/:
     QString newId(); //Generates successive identifitiers to use as public ids
-    void notificationReady();
 
 private /*attributes*/:
     const Device* m_device;
@@ -85,7 +82,7 @@ private /*attributes*/:
     /**
      * Mapping of threadID to the list of messages which make up that thread
      */
-    QHash<QString, QList<QPointer<ConversationMessage>>> m_conversations;
+    QHash<QString, QVector<ConversationMessage>> m_conversations;
     int m_lastId;
 
     TelephonyDbusInterface m_telephonyInterface;

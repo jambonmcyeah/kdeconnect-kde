@@ -86,7 +86,7 @@ Kirigami.ScrollablePage
                 personUri: model.personUri
             }
 
-            label: display
+            label: i18n("<b>%1</b> - %2", display, toolTip)
             icon: decoration
             function startChat() {
                 applicationWindow().pageStack.push(chatView, {
