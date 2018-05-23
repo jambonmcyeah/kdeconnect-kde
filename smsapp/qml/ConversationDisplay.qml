@@ -31,8 +31,8 @@ Kirigami.ScrollablePage
     property QtObject device
     property QtObject conversationId
 
-    readonly property string phoneNumber: person.contactCustomProperty("phoneNumber")
-    title: i18n("%1: %2", person.name, phoneNumber)
+    property string phoneNumber
+    title: person ? i18n("%1: %2", person.name, phoneNumber) : phoneNumber
 
     ListView {
         model: ConversationModel {

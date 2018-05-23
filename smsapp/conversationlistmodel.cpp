@@ -32,6 +32,7 @@ ConversationListModel::ConversationListModel(QObject* parent)
     qCCritical(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << "Constructing" << this;
     auto roles = roleNames();
     roles.insert(FromMeRole, "fromMe");
+    roles.insert(AddressRole, "address");
     roles.insert(PersonUriRole, "personUri");
     roles.insert(ConversationIdRole, "conversationId");
     roles.insert(DateRole, "date");
@@ -111,8 +112,10 @@ void ConversationListModel::createRowFromMessage(const ConversationMessage& mess
     }
     else
     {
+        item->setData(QString(), PersonUriRole);
         item->setText(message.address());
     }
+    item->setData(message.address(), AddressRole);
 
     item->setData(message.threadID(), ConversationIdRole);
     item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);

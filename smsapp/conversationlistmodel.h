@@ -46,6 +46,7 @@ public:
     enum Roles {
         FromMeRole = Qt::UserRole,
         PersonUriRole,
+        AddressRole,
         ConversationIdRole,
         DateRole,
     };

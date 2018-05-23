@@ -91,6 +91,7 @@ Kirigami.ScrollablePage
             function startChat() {
                 applicationWindow().pageStack.push(chatView, {
                                                        person: person.person,
+                                                       phoneNumber: address,
                                                        conversationId: model.conversationId,
                                                        device: device})
             }
