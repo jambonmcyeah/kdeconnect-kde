@@ -38,6 +38,7 @@ class KDECONNECTINTERFACES_EXPORT ConversationMessage
     Q_PROPERTY(qint32 type READ type)
     Q_PROPERTY(qint32 read READ read)
     Q_PROPERTY(qint32 threadID READ threadID)
+    Q_PROPERTY(qint32 uID READ uID)
 
 public:
     // TYPE field values from Android
@@ -62,6 +63,7 @@ public:
 
     ConversationMessage(const QString& body, const QString& address, const qint64& date,
                         const qint32& type, const qint32& read, const qint32& threadID,
+                        const qint32& uID,
                         QObject* parent = Q_NULLPTR);
 
     ConversationMessage(const ConversationMessage& other, QObject* parent = Q_NULLPTR);
@@ -75,6 +77,7 @@ public:
     qint32 type() const { return m_type; }
     qint32 read() const { return m_read; }
     qint32 threadID() const { return m_threadID; }
+    qint32 uID() const { return m_uID; }
 
     QVariantMap toVariant() const;
 
@@ -108,6 +111,11 @@ protected:
      * Tag which binds individual messages into a thread
      */
     qint32 m_threadID;
+
+    /**
+     * Value which uniquely identifies a message
+     */
+    qint32 m_uID;
 };
 
 Q_DECLARE_METATYPE(ConversationMessage);

@@ -31,12 +31,14 @@ ConversationMessage::ConversationMessage(const QVariantMap& args, QObject* paren
       m_date(args["date"].toLongLong()),
       m_type(args["type"].toInt()),
       m_read(args["read"].toInt()),
-      m_threadID(args["thread_id"].toInt())
+      m_threadID(args["thread_id"].toInt()),
+      m_uID(args["_id"].toInt())
       {
 }
 
 ConversationMessage::ConversationMessage (const QString& body, const QString& address, const qint64& date,
                                           const qint32& type, const qint32& read, const qint32& threadID,
+                                          const qint32& uID,
                                           QObject* parent)
     : QObject(parent)
     , m_body(body)
@@ -45,6 +47,7 @@ ConversationMessage::ConversationMessage (const QString& body, const QString& ad
     , m_type(type)
     , m_read(read)
     , m_threadID(threadID)
+    , m_uID(uID)
 {
 
 }
@@ -57,6 +60,7 @@ ConversationMessage::ConversationMessage(const ConversationMessage& other, QObje
     , m_type(other.m_type)
     , m_read(other.m_read)
     , m_threadID(other.m_threadID)
+    , m_uID(other.m_uID)
 {
 
 }
@@ -71,6 +75,7 @@ ConversationMessage& ConversationMessage::operator=(const ConversationMessage& o
     this->m_type = other.m_type;
     this->m_read = other.m_read;
     this->m_threadID = other.m_threadID;
+    this->m_uID = other.m_uID;
     return *this;
 }
 
@@ -82,7 +87,8 @@ QVariantMap ConversationMessage::toVariant() const
         {"date", m_date},
         {"type", m_type},
         {"read", m_read},
-        {"thread_id", m_threadID}
+        {"thread_id", m_threadID},
+        {"_id", m_uID},
     };
 }
 
@@ -90,7 +96,7 @@ QDBusArgument &operator<<(QDBusArgument &argument, const ConversationMessage &me
 {
     argument.beginStructure();
     argument << message.body() << message.address() << message.date() << message.type()
-            << message.read() << message.threadID();
+            << message.read() << message.threadID() << message.uID();
     argument.endStructure();
     return argument;
 }
@@ -103,6 +109,7 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, ConversationMessa
     qint32 type;
     qint32 read;
     qint32 threadID;
+    qint32 uID;
 
     argument.beginStructure();
     argument >> body;
@@ -111,9 +118,10 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, ConversationMessa
     argument >> type;
     argument >> read;
     argument >> threadID;
+    argument >> uID;
     argument.endStructure();
 
-    message = ConversationMessage(body, address, date, type, read, threadID);
+    message = ConversationMessage(body, address, date, type, read, threadID, uID);
 
     return argument;
 }
