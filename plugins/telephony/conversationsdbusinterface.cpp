@@ -62,17 +62,24 @@ void ConversationsDbusInterface::requestConversation(const QString& conversation
     for(int i=start; i<end; ++i) {
         if (i<messagesList.size()) {
             Q_EMIT conversationMessageReceived(messagesList.at(i).toVariant(), i);
-        } else
-            Q_EMIT conversationMessageReceived({}, i);
+        }
     }
 }
 
 void ConversationsDbusInterface::addMessage(const ConversationMessage &message)
 {
-    // Store the Message in the list corresponding to its thread
     const QString& threadId = QString::number(message.threadID());
+
+    if (m_known_messages[threadId].contains(message.uID()))
+    {
+        // This message has already been processed. Don't do anything.
+        return;
+    }
+
+    // Store the Message in the list corresponding to its thread
     bool newConversation = m_conversations.contains(threadId);
     m_conversations[threadId].append(message);
+    m_known_messages[threadId].insert(message.uID());
 
     // Tell the world about what just happened
     if (newConversation)

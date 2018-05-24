@@ -83,6 +83,12 @@ private /*attributes*/:
      * Mapping of threadID to the list of messages which make up that thread
      */
     QHash<QString, QVector<ConversationMessage>> m_conversations;
+
+    /**
+     * Mapping of threadID to the set of uIDs known in the corresponding conversation
+     */
+    QHash<QString, QSet<qint32>> m_known_messages;
+
     int m_lastId;
 
     TelephonyDbusInterface m_telephonyInterface;
