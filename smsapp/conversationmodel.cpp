@@ -20,7 +20,7 @@
 
 #include "conversationmodel.h"
 #include <QLoggingCategory>
-#include "conversationmessage.h"
+#include "interfaces/conversationmessage.h"
 
 Q_LOGGING_CATEGORY(KDECONNECT_SMS_CONVERSATION_MODEL, "kdeconnect.sms.conversation")
 
@@ -80,5 +80,6 @@ void ConversationModel::createRowFromMessage(const QVariantMap& msg, int pos)
     const ConversationMessage message(msg);
     auto item = new QStandardItem;
     item->setText(message.body());
+    item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);
     insertRow(pos, item);
 }

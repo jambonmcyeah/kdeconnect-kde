@@ -77,6 +77,15 @@
  */
 #define PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATIONS QStringLiteral("kdeconnect.telephony.request_conversations")
 
+/**
+ * Packet sent to request all the messages in a particular conversation
+ *
+ * The body should contain the key "threadID" mapping to the threadID (as a string) being requested
+ * For example:
+ * { "threadID": 203 }
+ */
+#define PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATION QStringLiteral("kdeconnect.telephony.request_conversation")
+
 Q_DECLARE_LOGGING_CATEGORY(KDECONNECT_PLUGIN_TELEPHONY)
 
 class TelephonyPlugin
@@ -100,6 +109,11 @@ public Q_SLOTS:
      * Send a request to the remote for all of its conversations
      */
     Q_SCRIPTABLE void requestAllConversations();
+
+    /**
+     * Send a request to the remote for a particular conversation
+     */
+    Q_SCRIPTABLE void requestConversation(const QString& conversationID) const;
 
 public:
 Q_SIGNALS:

@@ -197,6 +197,14 @@ void TelephonyPlugin::requestAllConversations()
     sendPacket(np);
 }
 
+void TelephonyPlugin::requestConversation (const QString& conversationID) const
+{
+    NetworkPacket np(PACKET_TYPE_TELEPHONY_REQUEST_CONVERSATION);
+    np.set("threadID", conversationID.toInt());
+
+    sendPacket(np);
+}
+
 void TelephonyPlugin::forwardToTelepathy(const ConversationMessage& message)
 {
     // In case telepathy can handle the message, don't do anything else

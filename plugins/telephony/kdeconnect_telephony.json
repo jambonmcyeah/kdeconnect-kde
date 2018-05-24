@@ -90,7 +90,8 @@
     "X-KdeConnect-OutgoingPacketType": [
         "kdeconnect.telephony.request",
         "kdeconnect.sms.request",
-        "kdeconnect.telephony.request_conversations"
+        "kdeconnect.telephony.request_conversations",
+        "kdeconnect.telephony.request_conversation"
     ],
     "X-KdeConnect-SupportedPacketType": [
         "kdeconnect.telephony",

@@ -48,16 +48,17 @@ QStringList ConversationsDbusInterface::activeConversations()
     return m_conversations.keys();
 }
 
-void ConversationsDbusInterface::requestConversation(const QString& conversationID, int start, int end) const
+void ConversationsDbusInterface::requestConversation(const QString& conversationID, int start, int end)
 {
     const auto messagesList = m_conversations[conversationID];
 
     if (messagesList.isEmpty())
     {
-        // Since there are no messages in the conversation, we can't do anything sensible
+        // Since there are no messages in the conversation, it's likely that it is a junk ID, but go ahead anyway
         qCWarning(KDECONNECT_PLUGIN_TELEPHONY) << "Got a conversationID for a conversation with no messages!" << conversationID;
-        return;
     }
+
+    m_telephonyInterface.requestConversation(conversationID);
 
     for(int i=start; i<end; ++i) {
         if (i<messagesList.size()) {
@@ -77,7 +78,7 @@ void ConversationsDbusInterface::addMessage(const ConversationMessage &message)
     }
 
     // Store the Message in the list corresponding to its thread
-    bool newConversation = m_conversations.contains(threadId);
+    bool newConversation = !m_conversations.contains(threadId);
     m_conversations[threadId].append(message);
     m_known_messages[threadId].insert(message.uID());
 

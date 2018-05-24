@@ -54,7 +54,7 @@ public Q_SLOTS:
      */
     QStringList activeConversations();
 
-    void requestConversation(const QString &conversationID, int start, int end) const;
+    void requestConversation(const QString &conversationID, int start, int end);
 
     /**
      * Send a new message to this conversation
