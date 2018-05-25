@@ -41,7 +41,10 @@ public:
     ConversationModel(QObject* parent = nullptr);
     ~ConversationModel();
 
-    enum Roles { FromMeRole = Qt::UserRole };
+    enum Roles {
+        FromMeRole = Qt::UserRole,
+        DateRole,
+    };
 
     QString threadId() const;
     void setThreadId(const QString &threadId);

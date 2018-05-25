@@ -30,6 +30,7 @@ ConversationModel::ConversationModel(QObject* parent)
 {
     auto roles = roleNames();
     roles.insert(FromMeRole, "fromMe");
+    roles.insert(DateRole, "date");
     setItemRoleNames(roles);
 }
 
@@ -81,5 +82,6 @@ void ConversationModel::createRowFromMessage(const QVariantMap& msg, int pos)
     auto item = new QStandardItem;
     item->setText(message.body());
     item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);
+    item->setData(message.date(), DateRole);
     insertRow(pos, item);
 }
