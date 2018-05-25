@@ -108,6 +108,8 @@ private:
      */
     QString canonicalizePhoneNumber(const QString& phoneNumber);
 
+    QStandardItem* conversationForThreadId(qint32 threadId);
+
     DeviceConversationsDbusInterface* m_conversationsInterface;
     QString m_deviceId;
     KPeople::PersonsModel m_people;

@@ -88,6 +88,16 @@ void ConversationListModel::printDBusError(const QDBusError& error)
     qCWarning(KDECONNECT_SMS_CONVERSATIONS_LIST_MODEL) << error;
 }
 
+QStandardItem * ConversationListModel::conversationForThreadId(qint32 threadId)
+{
+    for(int i=0, c=rowCount(); i<c; ++i) {
+        auto it = item(i, 0);
+        if (it->data(ConversationIdRole) == threadId)
+            return it;
+    }
+    return nullptr;
+}
+
 void ConversationListModel::createRowFromMessage(const QVariantMap& msg, int row)
 {
     if (row != 0)
@@ -101,27 +111,32 @@ void ConversationListModel::createRowFromMessage(const QVariantMap& msg, int row
         return;
     }
 
-    QStandardItem* item = new QStandardItem();
-
-    QScopedPointer<KPeople::PersonData> personData(lookupPersonByAddress(message.address()));
-    if (personData)
-    {
-        item->setText(personData->name());
-        item->setIcon(QIcon(personData->photo()));
-        item->setData(personData->personUri(), PersonUriRole);
-    }
-    else
-    {
-        item->setData(QString(), PersonUriRole);
-        item->setText(message.address());
+    bool toadd = false;
+    QStandardItem* item = conversationForThreadId(message.threadID());
+    if (!item) {
+        toadd = true;
+        item = new QStandardItem();
+        QScopedPointer<KPeople::PersonData> personData(lookupPersonByAddress(message.address()));
+        if (personData)
+        {
+            item->setText(personData->name());
+            item->setIcon(QIcon(personData->photo()));
+            item->setData(personData->personUri(), PersonUriRole);
+        }
+        else
+        {
+            item->setData(QString(), PersonUriRole);
+            item->setText(message.address());
+        }
+        item->setData(message.threadID(), ConversationIdRole);
     }
     item->setData(message.address(), AddressRole);
-    item->setData(message.body(), Qt::ToolTipRole);
-    item->setData(message.threadID(), ConversationIdRole);
     item->setData(message.type() == ConversationMessage::MessageTypeSent, FromMeRole);
+    item->setData(message.body(), Qt::ToolTipRole);
     item->setData(message.date(), DateRole);
 
-    appendRow(item);
+    if (toadd)
+        appendRow(item);
 }
 
 KPeople::PersonData* ConversationListModel::lookupPersonByAddress(const QString& address)
