@@ -55,8 +55,12 @@ Kirigami.ScrollablePage
         id: view
         currentIndex: 0
 
-        model: ConversationListModel {
-            deviceId: device ? device.id() : ""
+        model: QSortFilterProxyModel {
+            sortOrder: Qt.DescendingOrder
+            sortRole: ConversationListModel.DateRole
+            sourceModel: ConversationListModel {
+                deviceId: device ? device.id() : ""
+            }
         }
 
         header: TextField {
