@@ -40,8 +40,7 @@ ConversationModel::~ConversationModel()
 
 QString ConversationModel::threadId() const
 {
-    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Hi";
-    return {};
+    return m_threadId;
 }
 
 void ConversationModel::setThreadId(const QString &threadId)
@@ -61,7 +60,7 @@ void ConversationModel::setDeviceId(const QString& deviceId)
     if (deviceId == m_deviceId)
         return;
 
-    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "setDeviceId" << "of" << this;
+    qCDebug(KDECONNECT_SMS_CONVERSATION_MODEL) << "setDeviceId" << "of" << this;
     if (m_conversationsInterface) delete m_conversationsInterface;
 
     m_deviceId = deviceId;
@@ -72,7 +71,7 @@ void ConversationModel::setDeviceId(const QString& deviceId)
 
 void ConversationModel::sendReplyToConversation(const QString& message)
 {
-    qCCritical(KDECONNECT_SMS_CONVERSATION_MODEL) << "Should have sent " << message;
+    qCDebug(KDECONNECT_SMS_CONVERSATION_MODEL) << "Trying to send" << message << "to conversation with ID" << m_threadId;
     m_conversationsInterface->replyToConversation(m_threadId, message);
 }
 
