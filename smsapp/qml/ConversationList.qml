@@ -82,15 +82,11 @@ Kirigami.ScrollablePage
         {
             hoverEnabled: true
 
-            readonly property var person: PersonData {
-                personUri: model.personUri
-            }
-
             label: i18n("<b>%1</b> - %2", display, toolTip)
             icon: decoration
             function startChat() {
                 applicationWindow().pageStack.push(chatView, {
-                                                       person: person.person,
+                                                       personUri: model.personUri,
                                                        phoneNumber: address,
                                                        conversationId: model.conversationId,
                                                        device: device})
