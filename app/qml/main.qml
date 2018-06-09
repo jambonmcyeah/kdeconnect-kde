@@ -19,7 +19,7 @@
  */
 
 import QtQuick 2.2
-import QtQuick.Controls 1.1
+import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.1
 import org.kde.kirigami 2.0 as Kirigami
 import org.kde.kdeconnect 1.0
@@ -30,6 +30,8 @@ Kirigami.ApplicationWindow
     visible: true
     width: 900
     height: 500
+
+    header: Kirigami.ApplicationHeader {}
 
     Component {
         id: findDevicesComp

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Aleix Pol Gonzalez <aleixpol@kde.org>
+ * Copyright 2018 Aleix Pol Gonzalez <aleixpol@kde.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,31 +19,40 @@
  */
 
 import QtQuick 2.2
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.1
 import org.kde.kirigami 2.0 as Kirigami
-import org.kde.kdeconnect 1.0
 
-Kirigami.BasicListItem
+Kirigami.Page
 {
-    property alias pluginName: checker.pluginName
-    property var interfaceFactory
-    property var component
+    id: mousepad
+    title: i18n("Presentation Remote")
+    property QtObject pluginInterface
 
-    readonly property var checker: PluginChecker {
-        id: checker
-        device: deviceView.currentDevice
+    actions.main: Kirigami.Action {
+        icon.name: "view-fullscreen"
+        text: i18n("Enable Full-Screen")
+        onTriggered: {
+            mousepad.pluginInterface.sendKeyPress("", 25 /*XK_F5*/);
+        }
     }
-    visible: checker.available
-    onClicked: {
-        if (component === "" || !interfaceFactory)
-            return;
 
-        var obj = interfaceFactory.create(checker.device.id());
-        var page = pageStack.push(
-            component,
-            { pluginInterface: obj }
-        );
-        obj.parent = page
+    ColumnLayout
+    {
+        anchors.fill: parent
+
+        RowLayout {
+            Layout.fillWidth: true
+            Button {
+                Layout.fillWidth: true
+                icon.name: "media-skip-backward"
+                onClicked: mousepad.pluginInterface.sendKeyPress("p");
+            }
+            Button {
+                Layout.fillWidth: true
+                icon.name: "media-skip-forward"
+                onClicked: mousepad.pluginInterface.sendKeyPress("n");
+            }
+        }
     }
 }

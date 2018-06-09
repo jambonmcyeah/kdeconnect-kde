@@ -19,7 +19,7 @@
  */
 
 import QtQuick 2.2
-import QtQuick.Controls 1.1
+import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.1
 import org.kde.kirigami 2.0 as Kirigami
 import org.kde.kdeconnect 1.0
@@ -31,6 +31,10 @@ Kirigami.Page
     title: currentDevice.name
 
     actions.contextualActions: deviceLoader.item.actions
+    leftPadding: 0
+    rightPadding: 0
+    topPadding: 0
+    bottomPadding: 0
 
     Loader {
         id: deviceLoader
@@ -56,6 +60,7 @@ Kirigami.Page
                 ]
 
                 id: trustedView
+                spacing: 0
                 Layout.fillHeight: true
                 Layout.fillWidth: true
 
@@ -69,6 +74,12 @@ Kirigami.Page
                     label: i18n("Remote input")
                     interfaceFactory: RemoteControlDbusInterfaceFactory
                     component: "qrc:/qml/mousepad.qml"
+                    pluginName: "remotecontrol"
+                }
+                PluginItem {
+                    label: i18n("Presentation Remote")
+                    interfaceFactory: RemoteKeyboardDbusInterfaceFactory
+                    component: "qrc:/qml/presentationRemote.qml"
                     pluginName: "remotecontrol"
                 }
                 PluginItem {
