@@ -123,12 +123,12 @@ Kirigami.Page
                         anchors.centerIn: parent
                     Button {
                         text: i18n("Accept")
-                        onClicked: deviceView.currentDevice.acceptPairing
+                        onClicked: deviceView.currentDevice.acceptPairing()
                     }
 
                     Button {
                         text: i18n("Reject")
-                        onClicked: deviceView.currentDevice.rejectPairing
+                        onClicked: deviceView.currentDevice.rejectPairing()
                     }
                 }
             }
