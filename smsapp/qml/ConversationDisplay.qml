@@ -18,11 +18,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-import QtQuick 2.1
+import QtQuick 2.6
 import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.1
 import org.kde.people 1.0
-import org.kde.kirigami 2.2 as Kirigami
+import org.kde.kirigami 2.4 as Kirigami
 import org.kde.kdeconnect.sms 1.0
 
 Kirigami.ScrollablePage
@@ -38,18 +38,26 @@ Kirigami.ScrollablePage
     property string phoneNumber
     title: person && person.name ? i18n("%1: %2", person.name, phoneNumber) : phoneNumber
 
-    ListView {
+    Kirigami.CardsListView {
+
         model: ConversationModel {
             id: model
             deviceId: device.id()
             threadId: page.conversationId
         }
 
-        delegate: Kirigami.BasicListItem {
-            readonly property real margin: 100
-            x: fromMe ? Kirigami.Units.gridUnit : margin
-            width: parent.width - margin - Kirigami.Units.gridUnit
-            contentItem: Label { text: model.display }
+        delegate: Row {
+                readonly property real margin: 100
+                leftPadding: model.fromMe ? parent.width - card.width : 0
+                Kirigami.AbstractCard {
+                    id: card
+                    width: parent.width - margin - Kirigami.Units.gridUnit
+                    contentItem: Label {
+                    id: label
+                    text: model.display
+                    wrapMode: Text.Wrap
+                }
+            }
         }
     }
     footer: RowLayout {
