@@ -24,6 +24,7 @@
 #include <QDBusAbstractAdaptor>
 #include <QHash>
 #include <QList>
+#include <QMap>
 #include <QString>
 #include <QStringList>
 #include <QDir>
@@ -81,8 +82,11 @@ private /*attributes*/:
 
     /**
      * Mapping of threadID to the list of messages which make up that thread
+     *
+     * The "List" is actually a QMap of the message timestamp to the actual message body
+     * so that we can use .values() to get a sorted list of messages
      */
-    QHash<QString, QVector<ConversationMessage>> m_conversations;
+    QHash<QString, QMap<qint64, ConversationMessage>> m_conversations;
 
     /**
      * Mapping of threadID to the set of uIDs known in the corresponding conversation
