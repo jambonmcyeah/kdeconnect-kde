@@ -68,7 +68,7 @@ void ConversationsDbusInterface::requestConversation(const QString& conversation
     {
         Q_EMIT conversationMessageReceived(it->toVariant(), i);
         i++;
-        if (!(i < end))
+        if (i >= end)
         {
             break;
         }
