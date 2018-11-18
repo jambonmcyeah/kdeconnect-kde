@@ -81,11 +81,12 @@ class Q_DECL_EXPORT SystemvolumePlugin : public KdeConnectPlugin
         SystemvolumePlugin &enclosing;
         QString name;
     };
-    IMMDeviceEnumerator *deviceEnumerator;
-    IMMNotificationClient *deviceCallback;
+    bool valid;
+    IMMDeviceEnumerator* deviceEnumerator;
+    IMMNotificationClient* deviceCallback;
     QMap<QString, QPair<IAudioEndpointVolume *, CAudioEndpointVolumeCallback *>> sinkList;
 
-    void sendSinkList();
+    bool sendSinkList();
 };
 
 #endif // SYSTEMVOLUMEPLUGINWIN_H

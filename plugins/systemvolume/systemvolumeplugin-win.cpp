@@ -9,7 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-K_PLUGIN_FACTORY_WITH_JSON( KdeConnectPluginFactory, "kdeconnect_systemvolume.json", registerPlugin< SystemvolumePlugin >(); )
+K_PLUGIN_FACTORY_WITH_JSON(KdeConnectPluginFactory, "kdeconnect_systemvolume.json", registerPlugin<SystemvolumePlugin>();)
 
 Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_SYSTEMVOLUME, "kdeconnect.plugin.systemvolume")
 
@@ -20,22 +20,28 @@ SystemvolumePlugin::SystemvolumePlugin(QObject *parent, const QVariantList &args
     CoInitialize(nullptr);
     deviceEnumerator = nullptr;
     HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator), (LPVOID *)&(deviceEnumerator));
-    if (hr != S_OK)
+    valid = (hr == S_OK);
+    if (!valid)
     {
-        throw hr;
+        qWarning("Initialization failed: Failed to create MMDeviceEnumerator");
+        qWarning("Error Code: %lx", hr);
     }
 }
 
 SystemvolumePlugin::~SystemvolumePlugin()
 {
-    deviceEnumerator->UnregisterEndpointNotificationCallback(deviceCallback);
-    deviceEnumerator->Release();
-    deviceEnumerator = nullptr;
-    CoUninitialize();
+    if (valid)
+    {
+        deviceEnumerator->UnregisterEndpointNotificationCallback(deviceCallback);
+        deviceEnumerator->Release();
+        deviceEnumerator = nullptr;
+    }
 }
 
-void SystemvolumePlugin::sendSinkList()
+bool SystemvolumePlugin::sendSinkList()
 {
+    if(!valid)
+        return false;
 
     QJsonDocument document;
     QJsonArray array;
@@ -56,7 +62,9 @@ void SystemvolumePlugin::sendSinkList()
 
     if (hr != S_OK)
     {
-        throw hr;
+        qWarning("Failed to Enumumerate AudioEndpoints");
+        qWarning("Error Code: %lx", hr);
+        return false;
     }
     unsigned int deviceCount;
     devices->GetCount(&deviceCount);
@@ -93,16 +101,18 @@ void SystemvolumePlugin::sendSinkList()
         hr = device->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void **)&endpoint);
         if (hr != S_OK)
         {
-            qWarning() << QString::fromWCharArray(L"Warning: Failed to create IAudioEndpointVolume for ") << name;
-            qWarning() << QStringLiteral("Code: ") << hr;
+            qWarning() << "Failed to create IAudioEndpointVolume for device:" << name;
+            qWarning("Error Code: %lx", hr);
+
+            device->Release();
             continue;
         }
         endpoint->GetMasterVolumeLevelScalar(&volume);
         endpoint->GetMute(&muted);
 
         sinkObject.insert("muted", (bool)muted);
-        sinkObject.insert("volume", qint64(volume * 100));
-        sinkObject.insert("maxVolume", qint64(100));
+        sinkObject.insert("volume", (qint64)(volume * 100));
+        sinkObject.insert("maxVolume", (qint64)100);
 
         // Register Callback
         callback = new CAudioEndpointVolumeCallback(*this, name);
@@ -119,10 +129,14 @@ void SystemvolumePlugin::sendSinkList()
     NetworkPacket np(PACKET_TYPE_SYSTEMVOLUME);
     np.set<QJsonDocument>(QStringLiteral("sinkList"), document);
     sendPacket(np);
+    return true;
 }
 
 void SystemvolumePlugin::connected()
 {
+    if (!valid)
+        return;
+
     deviceCallback = new CMMNotificationClient(*this);
     deviceEnumerator->RegisterEndpointNotificationCallback(deviceCallback);
     sendSinkList();
@@ -130,24 +144,26 @@ void SystemvolumePlugin::connected()
 
 bool SystemvolumePlugin::receivePacket(const NetworkPacket &np)
 {
+    if (!valid)
+        return false;
+
     if (np.has(QStringLiteral("requestSinks")))
     {
-        sendSinkList();
+        return sendSinkList();
     }
     else
     {
-
         QString name = np.get<QString>(QStringLiteral("name"));
 
         if (sinkList.contains(name))
         {
             if (np.has(QStringLiteral("volume")))
             {
-                sinkList[name].first->SetMasterVolumeLevelScalar(float(np.get<int>(QStringLiteral("volume"))) / 100, NULL);
+                sinkList[name].first->SetMasterVolumeLevelScalar((float)np.get<int>(QStringLiteral("volume")) / 100, NULL);
             }
             if (np.has(QStringLiteral("muted")))
             {
-                sinkList[name].first->SetMute((BOOL)np.get<bool>(QStringLiteral("muted")), NULL);
+                sinkList[name].first->SetMute(np.get<bool>(QStringLiteral("muted")), NULL);
             }
         }
     }
@@ -243,12 +259,12 @@ SystemvolumePlugin::CAudioEndpointVolumeCallback::~CAudioEndpointVolumeCallback(
 HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CAudioEndpointVolumeCallback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
 {
     NetworkPacket np(PACKET_TYPE_SYSTEMVOLUME);
-    np.set<int>(QStringLiteral("volume"), qint64(pNotify->fMasterVolume * 100));
+    np.set<int>(QStringLiteral("volume"), (int)(pNotify->fMasterVolume * 100));
     np.set<QString>(QStringLiteral("name"), name);
     enclosing.sendPacket(np);
 
     NetworkPacket np2(PACKET_TYPE_SYSTEMVOLUME);
-    np2.set<bool>(QStringLiteral("muted"), (bool)pNotify->bMuted);
+    np2.set<bool>(QStringLiteral("muted"), pNotify->bMuted);
     np2.set<QString>(QStringLiteral("name"), name);
     enclosing.sendPacket(np2);
 
