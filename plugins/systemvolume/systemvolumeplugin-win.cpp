@@ -9,9 +9,161 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#include <Functiondiscoverykeys_devpkey.h>
+
 K_PLUGIN_FACTORY_WITH_JSON(KdeConnectPluginFactory, "kdeconnect_systemvolume.json", registerPlugin<SystemvolumePlugin>();)
 
 Q_LOGGING_CATEGORY(KDECONNECT_PLUGIN_SYSTEMVOLUME, "kdeconnect.plugin.systemvolume")
+
+// Private classes of SystemvolumePlugin
+
+class SystemvolumePlugin::CMMNotificationClient : public IMMNotificationClient
+{
+
+  public:
+    CMMNotificationClient(SystemvolumePlugin &x) : enclosing(x), _cRef(1){};
+
+    ~CMMNotificationClient(){};
+
+    // IUnknown methods -- AddRef, Release, and QueryInterface
+
+    ULONG STDMETHODCALLTYPE AddRef() override
+    {
+        return InterlockedIncrement(&_cRef);
+    }
+
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        ULONG ulRef = InterlockedDecrement(&_cRef);
+        if (ulRef == 0)
+        {
+            delete this;
+        }
+        return ulRef;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override
+    {
+        if (IID_IUnknown == riid)
+        {
+            AddRef();
+            *ppvInterface = (IUnknown *)this;
+        }
+        else if (__uuidof(IMMNotificationClient) == riid)
+        {
+            AddRef();
+            *ppvInterface = (IMMNotificationClient *)this;
+        }
+        else
+        {
+            *ppvInterface = NULL;
+            return E_NOINTERFACE;
+        }
+        return S_OK;
+    }
+
+    // Callback methods for device-event notifications.
+
+    HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDeviceId) override
+    {
+        if (flow == eRender)
+        {
+            enclosing.sendSinkList();
+        }
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId) override
+    {
+        enclosing.sendSinkList();
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId) override
+    {
+        enclosing.sendSinkList();
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) override
+    {
+        enclosing.sendSinkList();
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key) override
+    {
+        enclosing.sendSinkList();
+        return S_OK;
+    }
+
+  private:
+    LONG _cRef;
+    SystemvolumePlugin &enclosing;
+};
+
+class SystemvolumePlugin::CAudioEndpointVolumeCallback : public IAudioEndpointVolumeCallback
+{
+    LONG _cRef;
+
+  public:
+    CAudioEndpointVolumeCallback(SystemvolumePlugin &x, QString sinkName) : enclosing(x), name(sinkName), _cRef(1) {}
+    ~CAudioEndpointVolumeCallback(){};
+
+    // IUnknown methods -- AddRef, Release, and QueryInterface
+
+    ULONG STDMETHODCALLTYPE AddRef() override
+    {
+        return InterlockedIncrement(&_cRef);
+    }
+
+    ULONG STDMETHODCALLTYPE Release() override
+    {
+        ULONG ulRef = InterlockedDecrement(&_cRef);
+        if (ulRef == 0)
+        {
+            delete this;
+        }
+        return ulRef;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override
+    {
+        if (IID_IUnknown == riid)
+        {
+            AddRef();
+            *ppvInterface = (IUnknown *)this;
+        }
+        else if (__uuidof(IMMNotificationClient) == riid)
+        {
+            AddRef();
+            *ppvInterface = (IMMNotificationClient *)this;
+        }
+        else
+        {
+            *ppvInterface = NULL;
+            return E_NOINTERFACE;
+        }
+        return S_OK;
+    }
+
+    // Callback method for endpoint-volume-change notifications.
+
+    HRESULT STDMETHODCALLTYPE OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) override
+    {
+        NetworkPacket np(PACKET_TYPE_SYSTEMVOLUME);
+        np.set<int>(QStringLiteral("volume"), (int)(pNotify->fMasterVolume * 100));
+        np.set<bool>(QStringLiteral("muted"), pNotify->bMuted);
+        np.set<QString>(QStringLiteral("name"), name);
+        enclosing.sendPacket(np);
+
+        return S_OK;
+    }
+
+  private:
+    SystemvolumePlugin &enclosing;
+    QString name;
+};
 
 SystemvolumePlugin::SystemvolumePlugin(QObject *parent, const QVariantList &args)
     : KdeConnectPlugin(parent, args),
@@ -40,7 +192,7 @@ SystemvolumePlugin::~SystemvolumePlugin()
 
 bool SystemvolumePlugin::sendSinkList()
 {
-    if(!valid)
+    if (!valid)
         return false;
 
     QJsonDocument document;
@@ -168,144 +320,6 @@ bool SystemvolumePlugin::receivePacket(const NetworkPacket &np)
         }
     }
     return true;
-}
-
-// CMMNotificationClient
-
-SystemvolumePlugin::CMMNotificationClient::CMMNotificationClient(SystemvolumePlugin &x) : enclosing(x), _cRef(1) {}
-
-SystemvolumePlugin::CMMNotificationClient::~CMMNotificationClient() {}
-
-// Callback methods for device-event notifications.
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDeviceId)
-{
-    if (flow == eRender)
-    {
-        enclosing.sendSinkList();
-    }
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::OnDeviceAdded(LPCWSTR pwstrDeviceId)
-{
-    enclosing.sendSinkList();
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
-{
-    enclosing.sendSinkList();
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
-{
-    enclosing.sendSinkList();
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key)
-{
-    enclosing.sendSinkList();
-    return S_OK;
-}
-
-// IUnknown methods -- AddRef, Release, and QueryInterface
-
-ULONG STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::AddRef()
-{
-    return InterlockedIncrement(&_cRef);
-}
-
-ULONG STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::Release()
-{
-    ULONG ulRef = InterlockedDecrement(&_cRef);
-    if (0 == ulRef)
-    {
-        delete this;
-    }
-    return ulRef;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CMMNotificationClient::QueryInterface(REFIID riid, VOID **ppvInterface)
-{
-    if (IID_IUnknown == riid)
-    {
-        AddRef();
-        *ppvInterface = (IUnknown *)this;
-    }
-    else if (__uuidof(IMMNotificationClient) == riid)
-    {
-        AddRef();
-        *ppvInterface = (IMMNotificationClient *)this;
-    }
-    else
-    {
-        *ppvInterface = NULL;
-        return E_NOINTERFACE;
-    }
-    return S_OK;
-}
-
-// CAudioEndpointVolumeCallback
-
-SystemvolumePlugin::CAudioEndpointVolumeCallback::CAudioEndpointVolumeCallback(SystemvolumePlugin &x, QString sinkName) : enclosing(x), name(sinkName), _cRef(1) {}
-
-SystemvolumePlugin::CAudioEndpointVolumeCallback::~CAudioEndpointVolumeCallback() {}
-
-// Callback method for endpoint-volume-change notifications.
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CAudioEndpointVolumeCallback::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify)
-{
-    NetworkPacket np(PACKET_TYPE_SYSTEMVOLUME);
-    np.set<int>(QStringLiteral("volume"), (int)(pNotify->fMasterVolume * 100));
-    np.set<QString>(QStringLiteral("name"), name);
-    enclosing.sendPacket(np);
-
-    NetworkPacket np2(PACKET_TYPE_SYSTEMVOLUME);
-    np2.set<bool>(QStringLiteral("muted"), pNotify->bMuted);
-    np2.set<QString>(QStringLiteral("name"), name);
-    enclosing.sendPacket(np2);
-
-    return S_OK;
-}
-
-// IUnknown methods -- AddRef, Release, and QueryInterface
-
-ULONG STDMETHODCALLTYPE SystemvolumePlugin::CAudioEndpointVolumeCallback::AddRef()
-{
-    return InterlockedIncrement(&_cRef);
-}
-
-ULONG STDMETHODCALLTYPE SystemvolumePlugin::CAudioEndpointVolumeCallback::Release()
-{
-    ULONG ulRef = InterlockedDecrement(&_cRef);
-    if (0 == ulRef)
-    {
-        delete this;
-    }
-    return ulRef;
-}
-
-HRESULT STDMETHODCALLTYPE SystemvolumePlugin::CAudioEndpointVolumeCallback::QueryInterface(REFIID riid, VOID **ppvInterface)
-{
-    if (IID_IUnknown == riid)
-    {
-        AddRef();
-        *ppvInterface = (IUnknown *)this;
-    }
-    else if (__uuidof(IMMNotificationClient) == riid)
-    {
-        AddRef();
-        *ppvInterface = (IMMNotificationClient *)this;
-    }
-    else
-    {
-        *ppvInterface = NULL;
-        return E_NOINTERFACE;
-    }
-    return S_OK;
 }
 
 #include "systemvolumeplugin-win.moc"
